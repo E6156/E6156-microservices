@@ -5,6 +5,7 @@
 # - requests enables accessing the elements of an incoming HTTP/REST request.
 #
 from flask import Flask, Response, request
+from flask_cors import CORS
 
 from datetime import datetime
 import json
@@ -45,6 +46,7 @@ footer_text = '</body>\n</html>'
 # EB looks for an 'application' callable by default.
 # This is the top-level application that receives and routes requests.
 application = Flask(__name__)
+CORS(application)
 
 # add a rule for the index page. (Put here by AWS in the sample)
 application.add_url_rule('/', 'index', (lambda: header_text +
