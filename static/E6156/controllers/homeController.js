@@ -1,7 +1,4 @@
-//var app = angular.module("CustomerApp", []);
-
-CustomerApp.controller("homeController", function($scope, $http, $location, $window) {
-
+CustomerApp.controller("homeController", function ($scope, $http, $location, $window, $mdDialog) {
     console.log("Loaded.")
 
     $scope.lemail = null;
@@ -20,12 +17,12 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
     console.log("Port = " + $location.port());
     console.log("Protocol = " + $location.protocol());
 
-    $scope.navMenu = function(selection) {
+    $scope.navMenu = function (selection) {
         console.log("Selection = " + selection);
         $scope.menuSelection = selection;
     };
 
-    $scope.getNavClass = function(selection) {
+    $scope.getNavClass = function (selection) {
         if (selection == $scope.menuSelection) {
             return "nav-item active";
         }
@@ -34,13 +31,13 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
         }
     };
 
-    $scope.boo = function() {
+    $scope.boo = function () {
         console.log("Boo")
     };
 
     $scope.buttonStates = {
-        lookUp: { code: 0, msg: "Look it up dude!"},
-        resetIt: { code: 1, msg: "Reset it dude."}
+        lookUp: {code: 0, msg: "Look it up dude!"},
+        resetIt: {code: 1, msg: "Reset it dude."}
     };
     $scope.searchStates = {
         byId: 0,
@@ -66,7 +63,7 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
     $scope.input.playerId = null;
     $scope.inputMode = null;
 
-    $scope.canLookup = function() {
+    $scope.canLookup = function () {
         console.log("inputPlayerId = ", $scope.input.playerId)
         console.log("search_type = ", $scope.search_type)
         if ($scope.inputPlayerId && $scope.inputPlayerId.length > 0) {
@@ -78,11 +75,11 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
         return false;
     };
 
-    $scope.showPeople = function() {
+    $scope.showPeople = function () {
         var result;
 
         if ($scope.currentPeople) {
-            result = ($scope.currentPeople.length>0)&&$scope.showList;
+            result = ($scope.currentPeople.length > 0) && $scope.showList;
         }
         else {
             result = false;
@@ -90,19 +87,19 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
         return result;
     };
 
-    $scope.doCloseDetails = function() {
+    $scope.doCloseDetails = function () {
         $scope.showDetails = false;
         $scope.showList = true;
     };
 
 
-    $scope.details = function(index) {
+    $scope.details = function (index) {
         console.log("Index = " + index);
         console.log("Name = " + $scope.currentPeople[index].nameFirst);
         doGetBatting($scope.currentPeople[index].playerID);
     };
 
-    var doGetBatting = function(playerId) {
+    var doGetBatting = function (playerId) {
         var url = urlBase + "/api/people/" + playerId + "/batting";
         $http.get(url).then(
             function (data) {
@@ -115,7 +112,7 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
             }
         );
     };
-    var doGetPeople = function(url) {
+    var doGetPeople = function (url) {
         $http.get(url).then(
             function (data) {
                 result = data.data;
@@ -127,16 +124,16 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
             }
         );
     };
-    $scope.doNext = function() {
+    $scope.doNext = function () {
         console.log("Next URL would be " + $scope.haveNext);
         doGetPeople(urlBase + $scope.haveNext);
     };
-     $scope.doPrev = function() {
+    $scope.doPrev = function () {
         console.log("Prev URL would be " + $scope.havePrev);
         doGetPeople(urlBase + $scope.havePrev);
     };
 
-    var monthNoToStr = function(n) {
+    var monthNoToStr = function (n) {
         var months = [
             'Jan',
             'Feb',
@@ -152,29 +149,29 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
             'Dec'
         ];
         var i = parseInt(n);
-        if (i>=0 && i<=11) {
+        if (i >= 0 && i <= 11) {
             return months[i];
         }
         else {
             return "???"
         }
     };
-    var getDate = function(y, m, d) {
+    var getDate = function (y, m, d) {
         var tmp = "";
 
-        if (y && y.length>0) {
+        if (y && y.length > 0) {
             tmp += "-" + y;
         }
         else {
             return "UNKNOWN";
         }
-        if (m && m.length>0) {
+        if (m && m.length > 0) {
             tmp = "-" + monthNoToStr(m) + tmp
         }
         else {
             return "UNKNOWN";
         }
-        if (d && d.length>0) {
+        if (d && d.length > 0) {
             tmp = d + tmp
         }
         else {
@@ -183,8 +180,8 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
         return tmp;
     };
 
-    var safeFieldGet = function(f) {
-        if (f && f.length>0) {
+    var safeFieldGet = function (f) {
+        if (f && f.length > 0) {
             return f
         }
         else {
@@ -192,10 +189,10 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
         }
     };
 
-    var processBatting = function(result) {
+    var processBatting = function (result) {
 
         if (result.player_info.nameGiven &&
-            result.player_info.nameGiven.length > 0){
+            result.player_info.nameGiven.length > 0) {
             result.player_info.fullName = result.player_info.nameGiven + " " + result.player_info.nameLast;
         }
         else {
@@ -209,7 +206,7 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
         result.player_info.weight = safeFieldGet(result.player_info.weight);
 
         result.batting = result.batting.sort(
-            function(a,b) {
+            function (a, b) {
                 return a.yearID > b.yearID
             });
 
@@ -219,7 +216,7 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
         $scope.showList = false;
     };
 
-    var processPage = function(result) {
+    var processPage = function (result) {
         if (!result) {
             $("#exampleModal").modal();
         }
@@ -248,15 +245,16 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
             }
             else {
                 $scope.currentPeople.push(result);
-            };
+            }
             $scope.currentButtonState = $scope.buttonStates.resetIt;
             $scope.buttonmsg = $scope.currentButtonState.msg;
             $scope.showList = true;
             $scope.currentPage = result
-        };
+        }
     };
 
-    $scope.doButton = function() {
+    $scope.doButton = function () {
+        console.log("doButton!");
         if ($scope.currentButtonState === $scope.buttonStates.lookUp) {
             console.log("Looking it up!");
             var searchUrl = null;
@@ -271,33 +269,53 @@ CustomerApp.controller("homeController", function($scope, $http, $location, $win
                 searchUrl = urlBase + "/api/people?nameLast=" + $scope.inputLastName;
                 if ($scope.inputFirstName != null) {
                     searchUrl += "&nameFirst=" + $scope.inputFirstName;
-                };
-            };
-
-
-            doGetPeople(searchUrl)
-
-
+                }
+            }
+            doGetPeople(searchUrl);
         }
         else {
             $scope.currentPeople = [];
             $scope.battingInfo = null;
             $scope.showDetails = false;
             //$scope.showList = false;
-            $scope.currentButtonState = $scope.buttonStates.lookUp
+            $scope.currentButtonState = $scope.buttonStates.lookUp;
             $scope.inputFirstName = null;
             $scope.inputLastName = null;
             $scope.inputPlayerId = null;
         }
     };
 
-    $scope.click = function() {
+    $scope.click = function () {
         console.log("Clicked.")
-        console.log("Search type = " + $scope.search_type)
     }
 
+    $scope.doLogout = function () {
+        $scope.loginRegisterResult = false
+    }
 
+    $scope.doLogin = function () {
+        $("#loginModal").modal("show");
+    }
 
-
+    $scope.getCustomer = function (email, password) {
+        // todo: use password for verification
+        var url = urlBase + "/api/user/" + email;
+        $http.get(url).then(
+            function (data) {
+                result = data.data;
+                $scope.loginRegisterResult = true
+                $scope.customerInfo = {
+                    lastName: result.last_name,
+                    firstName: result.first_name,
+                    email: result.email,
+                }
+                console.log("Data = " + JSON.stringify(result, null, 4));
+                $("#loginModal").modal("hide");
+            },
+            function (error) {
+                console.log("Error = " + JSON.stringify(error, null, 4));
+                $scope.loginInfo = "Wrong login info!"
+            }
+        );
+    }
 });
-
