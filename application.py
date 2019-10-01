@@ -12,6 +12,8 @@ import json
 from CustomerInfo.Users import UsersService as UserService
 from Context.Context import Context
 
+import os
+
 # Setup and use the simple, common Python logging framework. Send log messages to the console.
 # The application should get the log level out of the context. We will change later.
 #
@@ -188,6 +190,31 @@ def user_email(email):
                 rsp_data = None
                 rsp_status = 404
                 rsp_txt = "NOT FOUND"
+
+        elif inputs["method"] == "PUT":
+            user_info = request.json
+            id = user_service.update_user(user_info)
+            if id is not None:
+                rsp_status = 200
+                rsp_txt = "id = " + id + " password changed."
+                rsp_data = id
+            else:
+                rsp_data = None
+                rsp_status = 404
+                rsp_txt = "NOT FOUND"
+
+        elif request.method == 'DELETE':
+            user_info = request.json
+            id = user_service.delete_user(user_info)
+            if id is not None:
+                rsp_status = 200
+                rsp_txt = "id = " + id + " user deleted."
+                rsp_data = id
+            else:
+                rsp_data = None
+                rsp_status = 404
+                rsp_txt = "NOT FOUND"
+
         else:
             rsp_data = None
             rsp_status = 501
@@ -226,37 +253,6 @@ def registration():
         rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
     return rsp
 
-@application.route("/api/user", methods=["PUT", "DELETE"])
-def user():
-    try:
-        user_service = _get_user_service()
-        user_info = request.json
-
-        if request.method == 'PUT':
-            id = user_service.update_user(user_info)
-            if id is not None:
-                rsp_status = 200
-                rsp_txt = "id = "+ id + " password changed."
-
-        elif request.method == 'DELETE':
-            id = user_service.delete_user(user_info)
-            if id is not None:
-                rsp_status = 200
-                rsp_txt = "id = "+ id + " user deleted."
-
-        else:
-            rsp_data = None
-            rsp_status = 501
-            rsp_txt = "NOT IMPLEMENTED"
-        full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
-    except Exception as e:
-        log_msg = "/user: Exception = " + str(e)
-        logger.error(log_msg)
-        rsp_status = 500
-        rsp_txt = "INTERNAL SERVER ERROR. Please take COMSE6156 -- Cloud Native Applications."
-        full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
-
-    return full_rsp
 
 logger.debug("__name__ = " + str(__name__))
 # run the app.
@@ -264,6 +260,7 @@ if __name__ == "__main__":
     # Setting debug to True enables debug output. This line should be
     # removed before deploying a production app.
 
+    os.environ["db_connect_info"] = '{"host": "localhost", "port": 3306,"user": "root", "password": "dbuserdbuser" }'
 
     logger.debug("Starting Project EB at time: " + str(datetime.now()))
     init()
