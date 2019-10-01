@@ -222,5 +222,5 @@ if __name__ == "__main__":
     logger.debug("Starting Project EB at time: " + str(datetime.now()))
     init()
 
-    # application.debug = True
+    application.debug = True
     application.run()
