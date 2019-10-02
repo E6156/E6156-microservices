@@ -51,14 +51,14 @@
                         <form id='login-form' method='post'>
                             <md-input-container class="md-block">
                                 <label>Email</label>
-                                <input ng-model="user.email" type="email" required>
+                                <input ng-model="user_info.email" type="email" required>
                             </md-input-container>
                             <md-input-container class="md-block">
                                 <label>Password</label>
-                                <input ng-model="user.password" type="password" required>
+                                <input ng-model="user_info.password" type="password" required>
                             </md-input-container>
                             <div style="color: maroon">{{loginInfo}}</div>
-                            <md-button ng-click="getCustomer(user.email, user.password)">Login</md-button>
+                            <md-button ng-click="getCustomer(user_info.email, user_info.password)">Login</md-button>
                         </form>
                     </md-content>
                 </md-tab>
@@ -67,26 +67,22 @@
                         <form id='register-form' method='post'>
                             <md-input-container class="md-block" flex-gt-sm>
                                 <label>Firstname</label>
-                                <input ng-model="user.firstname" type="text" required>
+                                <input ng-model="user_info.first_name" type="text" required>
                             </md-input-container>
                             <md-input-container class="md-block" flex-gt-sm>
                                 <label>Lastname</label>
-                                <input ng-model="user.lastname" type="text" required>
+                                <input ng-model="user_info.last_name" type="text" required>
                             </md-input-container>
                             <md-input-container class="md-block">
                                 <label>Email</label>
-                                <input ng-model="user.email" type="email" required>
+                                <input ng-model="user_info.email" type="email" required>
                             </md-input-container>
                             <md-input-container class="md-block">
                                 <label>Password</label>
-                                <input ng-model="user.password" type="password" required>
+                                <input ng-model="user_info.password" type="password" required>
                             </md-input-container>
-                            <md-input-container class="md-block">
-                                <label>Confirm Password</label>
-                                <input ng-model="user.password" type="password" required>
-                            </md-input-container>
-                            <!--todo: create new user here-->
-                            <md-button type="submit" ng-click="">Register</md-button>
+                            <div style="color: maroon">{{resgitrationInfo}}</div>
+                            <md-button type="submit" ng-click="createCustomer(user_info)">Register</md-button>
                         </form>
                     </md-content>
                 </md-tab>

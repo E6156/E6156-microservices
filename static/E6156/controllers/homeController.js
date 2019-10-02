@@ -324,4 +324,20 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
             }
         );
     }
+
+    $scope.createCustomer = function (user_info) {
+        var url = urlBase + "/api/registrations";
+        console.log(user_info)
+        $http.post(url, user_info).then(
+            function (data) {
+                result = data.data;
+                console.log("Data = " + JSON.stringify(result, null, 4));
+                $scope.resgitrationInfo = "New user created!"
+            },
+            function (error) {
+                console.log("Error = " + JSON.stringify(error, null, 4));
+                $scope.resgitrationInfo = "Wrong Registration info!"
+            }
+        );
+    }
 });
