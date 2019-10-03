@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from Context.Context import Context
 from DataAccess.DataObject import UsersRDB as UsersRDB
+from uuid import uuid4
 
 # The base classes would not be IN the project. They would be in a separate included package.
 # They would also do some things.
@@ -58,6 +59,8 @@ class UsersService(BaseService):
                     raise ServiceException(ServiceException.bad_data,
                            "Email looks invalid: " + v)
 
+        user_info['id'] = str(uuid4())
+        user_info['status'] = 'PENDING'
         result = UsersRDB.create_user(user_info=user_info)
 
         return result
