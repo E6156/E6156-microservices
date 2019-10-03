@@ -20,5 +20,5 @@ def t2():
      res = UsersRDB.create_user(user_info=usr)
      print("Res = ", res)
 
-#t1()
-t2()
+t1()
+#t2()
