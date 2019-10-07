@@ -47,7 +47,8 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
     $scope.havePrev = false;
     $scope.haveNext = false;
 
-    var urlBase;
+    var urlBase = "http://127.0.0.1:5000";
+
     if(window.location.href.indexOf("localhost") > -1) {
         urlBase = "http://127.0.0.1:5000";
     } else if (window.location.href.indexOf("s3") > -1) {

@@ -273,8 +273,6 @@ if __name__ == "__main__":
     # Setting debug to True enables debug output. This line should be
     # removed before deploying a production app.
 
-    os.environ["db_connect_info"] = '{"host": "localhost", "port": 3306,"user": "root", "password": "dbuserdbuser" }'
-
     logger.debug("Starting Project EB at time: " + str(datetime.now()))
     init()
 

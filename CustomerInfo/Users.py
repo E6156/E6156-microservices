@@ -65,7 +65,17 @@ class UsersService(BaseService):
 
         return result
 
+    @classmethod
+    def update_user(cls, user_info):
 
+        result = UsersRDB.update_user(user_info=user_info)
+        return result
+
+    @classmethod
+    def delete_user(cls, user_info):
+
+        result = UsersRDB.delete_user(user_info=user_info)
+        return result
 
 
 
