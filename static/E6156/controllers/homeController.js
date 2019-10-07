@@ -305,9 +305,8 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
     }
 
     $scope.getCustomer = function (email, password) {
-        // todo: use password for verification
-        var url = urlBase + "/api/user/" + email;
-        $http.get(url).then(
+        var url = urlBase + "/api/login";
+        $http.post(url, {email, password}).then(
             function (data) {
                 result = data.data;
                 $scope.loginRegisterResult = true

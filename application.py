@@ -255,6 +255,17 @@ def registration():
         rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
     return rsp
 
+@application.route("/api/login", methods=["POST"])
+def login():
+    login_info = request.json
+    logger.debug(login_info)
+    # todo login here
+    rsp = Response('NOT IMPLEMENTED', status=501, content_type="text/plain")
+    return rsp
+
+@application.route("/api/logout", methods=["DELETE"])
+def logout():
+    pass
 
 logger.debug("__name__ = " + str(__name__))
 # run the app.
