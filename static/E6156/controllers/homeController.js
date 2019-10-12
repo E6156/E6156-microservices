@@ -311,9 +311,10 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
                 result = data.data;
                 $scope.loginRegisterResult = true
                 $scope.customerInfo = {
-                    lastName: result.last_name,
-                    firstName: result.first_name,
+                    //lastName: result.last_name,
+                    //firstName: result.first_name,
                     email: result.email,
+                    password: result.password
                 }
                 console.log("Data = " + JSON.stringify(result, null, 4));
                 $("#loginModal").modal("hide");

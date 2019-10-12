@@ -42,6 +42,29 @@ class UsersRDB(BaseDataObject):
         return result
 
     @classmethod
+    def get_login(cls, login_info):
+
+        result = None
+
+        login_fields = {"email","first_name","last_name"}
+        try:
+            sql, args = data_adaptor.create_select(table_name="users", template=login_info, fields=login_fields)
+            res, data = data_adaptor.run_q(sql, args)
+            if data is not None and len(data) > 0:
+                result = data[0]
+            else:
+                result = None
+        except pymysql.err.IntegrityError as ie:
+            if ie.args[0] == 1062:
+                raise (DataException(DataException.duplicate_key))
+            else:
+                raise DataException()
+        except Exception as e:
+            raise DataException()
+
+        return result
+
+    @classmethod
     def create_user(cls, user_info):
 
         result = None

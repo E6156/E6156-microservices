@@ -257,10 +257,42 @@ def registration():
 
 @application.route("/api/login", methods=["POST"])
 def login():
-    login_info = request.json
-    logger.debug(login_info)
-    # todo login here
-    rsp = Response('NOT IMPLEMENTED', status=501, content_type="text/plain")
+    inputs = log_and_extract_input(demo)
+    rsp_data = None
+    rsp_status = None
+    rsp_txt = None
+
+
+    try:
+        user_service = _get_user_service()
+        login_info = request.json
+        logger.debug(login_info)
+        logger.error("/login: _user_service = " + str(user_service))
+
+        if inputs["method"] == "POST":
+
+            rsp = user_service.get_login(login_info)
+
+            if rsp is not None:
+                rsp_data = rsp
+                rsp_status = 200
+                rsp_txt = "OK"
+            else:
+                rsp_data = None
+                rsp_status = 404
+                rsp_txt = "NOT FOUND"
+
+        rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+    except Exception as e:
+        log_msg = "/email: Exception = " + str(e)
+        logger.error(log_msg)
+        rsp_status = 500
+        rsp_txt = "INTERNAL SERVER ERROR. User login failed."
+        rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+    log_response("/login:", rsp_status, rsp_data, rsp_txt)
+
     return rsp
 
 @application.route("/api/logout", methods=["DELETE"])

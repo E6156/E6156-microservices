@@ -9,3 +9,11 @@ virt/*
 venv
 .DS_Store
 __pycache__/
+*.pyc
+Context/__pycache__/__init__.cpython-37.pyc
+Context/__pycache__/Context.cpython-37.pyc
+CustomerInfo/__pycache__/__init__.cpython-37.pyc
+CustomerInfo/__pycache__/Users.cpython-37.pyc
+DataAccess/__pycache__/__init__.cpython-37.pyc
+DataAccess/__pycache__/DataAdaptor.cpython-37.pyc
+DataAccess/__pycache__/DataObject.cpython-37.pyc
