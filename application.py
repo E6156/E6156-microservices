@@ -194,11 +194,10 @@ def user_email(email):
                 rsp_txt = "NOT FOUND"
 
         elif inputs["method"] == "PUT":
-            user_info = request.json
-            id = user_service.update_user(user_info)
+            id = user_service.update_user(email, inputs["body"])
             if id is not None:
                 rsp_status = 200
-                rsp_txt = "id = " + id + " password changed."
+                rsp_txt = "id = " + id + " user updated."
                 rsp_data = id
             else:
                 rsp_data = None
@@ -206,8 +205,7 @@ def user_email(email):
                 rsp_txt = "NOT FOUND"
 
         elif request.method == 'DELETE':
-            user_info = request.json
-            id = user_service.delete_user(user_info)
+            id = user_service.delete_user(email)
             if id is not None:
                 rsp_status = 200
                 rsp_txt = "id = " + id + " user deleted."
