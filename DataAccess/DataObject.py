@@ -32,8 +32,8 @@ class UsersRDB(BaseDataObject):
     @classmethod
     def get_by_email(cls, email):
 
-        sql = "select * from e6156.users where email=%s"
-        res, data = data_adaptor.run_q(sql=sql, args=(email), fetch=True)
+        sql = "select * from e6156.users where email=%s and status<>%s"
+        res, data = data_adaptor.run_q(sql=sql, args=(email, 'DELETED'), fetch=True)
         if data is not None and len(data) > 0:
             result =  data[0]
         else:
@@ -87,11 +87,15 @@ class UsersRDB(BaseDataObject):
         return result
 
     @classmethod
-    def delete_user(cls, user_info):
+    def delete_user(cls, email):
         result = None
+        user_info = UsersRDB.get_by_email(email)
+        if user_info is None:
+            return result
         try:
-            template = {'id': user_info['id']}
-            sql, args = data_adaptor.delete(table_name="users", template=template)
+            sql, args = data_adaptor.create_update(table_name="users",
+                                                   new_values={"status": "DELETED"},
+                                                   template={"email": email})
             res, data = data_adaptor.run_q(sql, args)
             if res != 1:
                 result = None
@@ -104,12 +108,15 @@ class UsersRDB(BaseDataObject):
         return result
 
     @classmethod
-    def update_user(cls, user_info):
+    def update_user(cls, email, data):
         result = None
+        user_info = UsersRDB.get_by_email(email)
+        if user_info is None:
+            return result
         try:
-            new_val = {'password': user_info['password']}
-            template = {'id': user_info['id']}
-            sql, args = data_adaptor.create_update(table_name="users", new_values=new_val, template=template)
+            sql, args = data_adaptor.create_update(table_name="users",
+                                                   new_values=data,
+                                                   template={"email": email})
             res, data = data_adaptor.run_q(sql, args)
             if res != 1:
                 result = None
