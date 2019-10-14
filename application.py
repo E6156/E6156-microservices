@@ -12,6 +12,7 @@ import json
 
 from CustomerInfo.Users import UsersService as UserService
 from Context.Context import Context
+from Middleware.notification import publish_it
 
 import os
 
@@ -245,6 +246,7 @@ def registration():
         if id is not None:
             rsp_txt = "USER CREATED: "+id
             rsp = Response(rsp_txt, status=201, mimetype='text/plain')
+            publish_it(user_info)
     except Exception as e:
         log_msg = "/user: Exception = " + str(e)
         logger.error(log_msg)
