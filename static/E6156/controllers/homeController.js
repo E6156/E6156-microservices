@@ -301,6 +301,7 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
     }
 
     $scope.doLogin = function () {
+        console.log("Processing login...")
         $("#loginModal").modal("show");
     }
 
