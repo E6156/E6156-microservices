@@ -309,13 +309,12 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
         var url = urlBase + "/api/login";
         $http.post(url, {email, password}).then(
             function (data) {
-                result = data.data;
+                result = data.data[0]
                 $scope.loginRegisterResult = true
                 $scope.customerInfo = {
-                    //lastName: result.last_name,
-                    //firstName: result.first_name,
-                    email: result.email,
-                    password: result.password
+                    lastName: result.last_name,
+                    firstName: result.first_name,
+                    email: result.email
                 }
                 console.log("Data = " + JSON.stringify(result, null, 4));
                 $("#loginModal").modal("hide");
@@ -327,14 +326,14 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
         );
     }
 
-    $scope.createCustomer = function (user_info) {
+    $scope.createCustomer = function (user_info, confirm_password) {
         var url = urlBase + "/api/registrations";
         console.log(user_info)
         if (user_info.first_name == null ||user_info.first_name == ""|| user_info.last_name == null || user_info.last_name == "" || user_info.email == null || user_info.email == "" || user_info.password == null || user_info.password == ""){
             $scope.resgitrationInfo = "Please check your info!";       
-        } else if (user_info.confirm_password != user_info.password){
+        } else if (confirm_password != user_info.password){
             $scope.resgitrationInfo = "Passwords do not match!" 
-        }else{
+        } else{
             $http.post(url, user_info).then(
                 function (data) {
                     result = data.data;

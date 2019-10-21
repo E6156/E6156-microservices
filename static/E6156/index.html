@@ -83,10 +83,10 @@
                             </md-input-container>
                             <md-input-container class="md-block">
                                 <label>Confirm Password</label>
-                                <input ng-model="user_info.confirm_password" type="password" required>
+                                <input ng-model="confirm_password" type="password" required>
                             </md-input-container>
                             <div style="color: maroon">{{resgitrationInfo}}</div>
-                            <md-button type="submit" ng-click="createCustomer(user_info)">Register</md-button>
+                            <md-button type="submit" ng-click="createCustomer(user_info, confirm_password)">Register</md-button>
                         </form>
                     </md-content>
                 </md-tab>
