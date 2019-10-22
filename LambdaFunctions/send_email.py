@@ -1,16 +1,31 @@
 import json
-
+import time
 import boto3
 from botocore.exceptions import ClientError
+from botocore.vendored import requests
+
+from lambda_utils import *
+import jwt.jwt.api_jwt as apij
+
+_secret = "secret"
+
+# Api gateway endpoint to generate redirect link
+API_ENDPOINT = os.environ.get("API_ENDPOINT", None)
+
+# Elastic beanstalk endpoint to update user info
+EB_ENDPOINT = os.environ.get("EB_ENDPOINT", None)
+
+# S3 endpoint for static webpage
+S3_ENDPOINT = os.environ.get("S3_ENDPOINT", None)
 
 # Replace sender@example.com with your "From" address.
 # This address must be verified with Amazon SES.
 # SENDER = "Donald F. Ferguson <dff@cs.columbia.edu>"
-SENDER = "rjl2172@columbia.edu"
+SENDER = os.environ.get("SENDER", None)
 
 # Replace recipient@example.com with a "To" address. If your account
 # is still in the sandbox, this address must be verified.
-RECIPIENT = "rjl2172@columbia.edu"
+RECIPIENT = os.environ.get("RECIPIENT", None)
 
 # Specify a configuration set. If you do not want to use a configuration
 # set, comment the following variable, and the
@@ -41,7 +56,7 @@ BODY_HTML = """<html>
       <form action="http://google.com">
         <input type="submit" value="Go to Google" />
     </form>
-    <p>A really cool verification link would look like:{}
+    <p>A really cool verification link would look like: %s
 </body>
 </html>
             """
@@ -57,6 +72,8 @@ client = boto3.client('ses', region_name=AWS_REGION)
 def send_email(em):
     try:
         print("em = ", em)
+        url = API_ENDPOINT + "?token=" + \
+              apij.encode({"time": time.time(), "em": em}, key=_secret).decode(encoding='UTF-8')
         # Provide the contents of the email.
         response = client.send_email(
             Destination={
@@ -68,7 +85,7 @@ def send_email(em):
                 'Body': {
                     'Html': {
                         'Charset': CHARSET,
-                        'Data': BODY_HTML,
+                        'Data': BODY_HTML % url,
                     },
                     'Text': {
                         'Charset': CHARSET,
@@ -112,30 +129,39 @@ def handle_sns_event(records):
         send_email(em)
 
 
+def handle_api_event(method, event):
+    logger.info("I got an API GW proxy event.")
+    logger.info("\nhttpMethod = " + method + "\n")
+    redirect_url = S3_ENDPOINT + "/verifail"
+    response = respond(None, None, "301", {"Location": redirect_url})
+    if method == "GET":
+        params = event.get("queryStringParameters", None)
+        if params:
+            token = params.get("token", None)
+            if token:
+                token_info = apij.decode(token.encode("utf-8"), key=_secret)
+                email = token_info.get("em", None)
+                full_url = EB_ENDPOINT + "/api/user/" + email
+                user_resp = requests.put(full_url, json={"status": "ACTIVE"})
+                if user_resp.status_code == 200:
+                    redirect_url = S3_ENDPOINT + "/verisuccess"
+                    response = respond(None, None, "301", {"Location": redirect_url})
+    return response
+
+
 def lambda_handler(event, context):
-    print("Event = ", json.dumps(event, indent=2))
+    configure_logging()
+    # logger.info("\nEvent = " + json.dumps(event, indent=2) + "\n")
 
     records = event.get("Records", None)
-    print("Records = ", json.dumps(records, indent=2))
+    method = event.get("httpMethod", None)
 
+    response = respond(None, {"cool": "example"})
     if records:
         handle_sns_event(records)
+    elif method:
+        response = handle_api_event(method, event)
     else:
-        p = event.get("path", None)
-        if p is not None:
-            print("Got a gateway event!")
-        else:
-            print("Doing a simple test.")
-            em = event.get("email", None)
-            if em is not None:
-                send_email(em)
-            else:
-                print("Nothing to do.")
+        logger.info("Not sure what I got.")
 
-
-    # TODO implement
-    return {
-        "statusCode": 200,
-        "body": json.dumps('Hello from Lambda!')
-    }
-
+    return response

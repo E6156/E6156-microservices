@@ -51,7 +51,7 @@ class UsersRDB(BaseDataObject):
             sql, args = data_adaptor.create_select(table_name="users", template=login_info, fields=login_fields)
             res, data = data_adaptor.run_q(sql, args)
             if data is not None and len(data) > 0:
-                result = data[0]
+                result = data
             else:
                 result = None
         except pymysql.err.IntegrityError as ie:

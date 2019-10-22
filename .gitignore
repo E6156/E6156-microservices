@@ -9,7 +9,8 @@ virt/*
 venv
 .DS_Store
 __pycache__/
-*.pyc
+**/*.pyc
+**/__pycache__/*
 Context/__pycache__/__init__.cpython-37.pyc
 Context/__pycache__/Context.cpython-37.pyc
 CustomerInfo/__pycache__/__init__.cpython-37.pyc
