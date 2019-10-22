@@ -10,7 +10,7 @@ def hash_password(pwd):
     return h
 
 
-def generate_token(email):
+def generate_token_old(email):
 
     token = {
         "email": email,
@@ -23,5 +23,22 @@ def generate_token(email):
         token['role']='student'
 
     h = jwt.encode(token, key=_context.get_context("JWT_SECRET"))
+
+    return h
+
+def generate_token(info):
+
+    info["timestamp"] =  time()
+    email = info['email']
+
+    if email == 'dff9@columbia.edu':
+        info['role']='admin'
+    else:
+        info['role']='student'
+
+    info['created'] = str(info['created'])
+
+    h = jwt.encode(info, key=_context.get_context("JWT_SECRET"))
+    h = str(h)
 
     return h
