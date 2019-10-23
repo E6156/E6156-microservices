@@ -199,11 +199,10 @@ def user_email(email):
             if id is not None:
                 rsp_status = 200
                 rsp_txt = "id = " + id + " user updated."
-                rsp_data = id
             else:
                 rsp_data = None
                 rsp_status = 404
-                rsp_txt = "NOT FOUND"
+                rsp_txt = "can not update"
 
         elif request.method == 'DELETE':
             id = user_service.delete_user(email)
@@ -276,13 +275,15 @@ def login():
             if rsp is not None:
                 rsp_data = rsp
                 rsp_status = 200
-                rsp_txt = "OK"
             else:
                 rsp_data = None
                 rsp_status = 404
                 rsp_txt = "NOT FOUND"
 
-        rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+        if rsp_data is not None:
+            rsp = Response(json.dumps(rsp_data), status=rsp_status, content_type="application/json")
+        else:
+            rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
 
     except Exception as e:
         log_msg = "/email: Exception = " + str(e)

@@ -14,6 +14,10 @@ angular.module('CustomerApp').config(['$locationProvider', '$routeProvider',
             templateUrl: 'templates/profile.template.html'
         }).when('/baseball', {
             templateUrl: 'templates/app.template.html'
+        }).when('/verisuccess', {
+            templateUrl: 'templates/verisuccess.template.html'
+        }).when('/verifail', {
+            templateUrl: 'templates/verifail.template.html'
         }).otherwise({
             templateUrl: 'templates/home.template.html'
         })

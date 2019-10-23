@@ -85,7 +85,7 @@ class UsersService(BaseService):
             raise ServiceException(ServiceException.bad_data,
                                    "Email looks invalid: " + email)
         for k in data:
-            if k not in set(UsersService.required_create_fields):
+            if k != "status" and k not in set(UsersService.required_create_fields):
                 raise ServiceException(ServiceException.bad_data,
                                        "Invalid field: " + k)
         return UsersRDB.update_user(email=email, data=data)
