@@ -52,7 +52,7 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
     if(window.location.href.indexOf("localhost") > -1) {
         urlBase = "http://127.0.0.1:5000";
     } else if (window.location.href.indexOf("s3") > -1) {
-        urlBase = "http://e6156-lz2636-dev-dev.us-west-2.elasticbeanstalk.com";
+        urlBase = "http://flask-env.cgs7gmmhbm.us-east-2.elasticbeanstalk.com";
     }
     console.log("API requests will be made to: ", urlBase);
 
