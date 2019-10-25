@@ -241,7 +241,7 @@ def registration():
     try:
         user_service = _get_user_service()
         user_info = request.json
-        id = user_service.create_user(user_info)
+        id = user_service.create_user(user_service.hash_password(user_info))
         if id is not None:
             rsp_txt = "USER CREATED: "+id
             rsp = Response(rsp_txt, status=201, mimetype='text/plain')
@@ -272,7 +272,7 @@ def login():
 
             rsp = user_service.get_login(login_info)
 
-            if rsp is not None:
+            if rsp is not None and user_service.check_hash_password(user_info,rsp):
                 rsp_data = rsp
                 rsp_status = 200
             else:

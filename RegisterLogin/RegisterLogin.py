@@ -32,7 +32,7 @@ class RegisterLoginSvc():
         test = security.hash_password({"password": login_info['password']})
         s_info = user_svc.get_by_email(login_info['email'])
         test = str(test)
-        if test == s_info['password']:
+        if str(test) == s_info['password']:
             tok = security.generate_token(s_info)
             return tok
         else:

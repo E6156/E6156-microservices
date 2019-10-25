@@ -31,7 +31,7 @@ def generate_token(info):
     info["timestamp"] =  time()
     email = info['email']
 
-    if email == 'dff9@columbia.edu':
+    if email == '':
         info['role']='admin'
     else:
         info['role']='student'
@@ -42,3 +42,6 @@ def generate_token(info):
     h = str(h)
 
     return h
+
+def authorize(url, method, token):
+    pass

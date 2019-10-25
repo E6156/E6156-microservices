@@ -46,7 +46,7 @@ class UsersRDB(BaseDataObject):
 
         result = None
 
-        login_fields = {"email","first_name","last_name"}
+        login_fields = {"email","first_name","last_name","password"}
         try:
             sql, args = data_adaptor.create_select(table_name="users", template=login_info, fields=login_fields)
             res, data = data_adaptor.run_q(sql, args)
