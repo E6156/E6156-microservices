@@ -261,18 +261,16 @@ def login():
     rsp_status = None
     rsp_txt = None
 
-
     try:
         user_service = _get_user_service()
         login_info = request.json
-        logger.debug(login_info)
         logger.error("/login: _user_service = " + str(user_service))
 
         if inputs["method"] == "POST":
+            rsp = user_service.get_login({'email': login_info['email']})
 
-            rsp = user_service.get_login(login_info)
 
-            if rsp is not None and user_service.check_hash_password(user_info,rsp):
+            if rsp is not None and user_service.check_hash_password(login_info,rsp[0]):
                 rsp_data = rsp
                 rsp_status = 200
             else:

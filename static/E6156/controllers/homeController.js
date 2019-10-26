@@ -6,6 +6,7 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
     $scope.password2 = null;
     $scope.firstName = null;
     $scope.lastName = null;
+    $scope.registrationInfo = null;
     $scope.register = false;
     $scope.loginRegisterResult = false;
     $scope.useEmailLogin = false;
@@ -330,19 +331,19 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
         var url = urlBase + "/api/registrations";
         console.log(user_info)
         if (user_info.first_name == null ||user_info.first_name == ""|| user_info.last_name == null || user_info.last_name == "" || user_info.email == null || user_info.email == "" || user_info.password == null || user_info.password == ""){
-            $scope.resgitrationInfo = "Please check your info!";       
+            $scope.registrationInfo = "Please check your info!";
         } else if (confirm_password != user_info.password){
-            $scope.resgitrationInfo = "Passwords do not match!" 
+            $scope.registrationInfo = "Passwords do not match!";
         } else{
             $http.post(url, user_info).then(
                 function (data) {
                     result = data.data;
                     console.log("Data = " + JSON.stringify(result, null, 4));
-                    $scope.resgitrationInfo = "New user created!"
+                    $scope.registrationInfo = "New user created!";
                 },
                 function (error) {
                     console.log("Error = " + JSON.stringify(error, null, 4));
-                    $scope.resgitrationInfo = "Wrong Registration info!"
+                    $scope.registrationInfo = "Wrong Registration info!";
                 }
             );
         }

@@ -58,17 +58,17 @@ class UsersService(BaseService):
 
     def check_hash_password(cls, user_info, user_info_db):
 
-        hashed_pwd_check = ''
+        hashed_pwd_check = False
 
         for f in UsersService.required_create_fields:
             v = user_info.get(f, None)
             v_db = user_info_db.get(f, None)
-            if v is None:
+            if v_db is None:
                 raise ServiceException(ServiceException.missing_field,
                                        "Missing field = " + f)
 
             if f == 'password':
-               hashed_pwd_check = check_password_hash(v_db, v)
+               hashed_pwd_check = check_password_hash(v_db, user_info['password'])
 
         return hashed_pwd_check
 
