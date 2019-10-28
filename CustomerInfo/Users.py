@@ -107,15 +107,16 @@ class UsersService(BaseService):
         return result
 
     @classmethod
-    def delete_user(cls, email):
+    def delete_user(cls, email, user_id):
         if email.find('@') == -1:
             raise ServiceException(ServiceException.bad_data,
                                    "Email looks invalid: " + email)
-
-        return UsersRDB.delete_user(email=email)
+        # Same as update_user
+        new_user_id = str(uuid4())
+        return UsersRDB.delete_user(email=email, new_user_id=new_user_id, old_user_id=user_id)
 
     @classmethod
-    def update_user(cls, email, data):
+    def update_user(cls, email, data, user_id):
         if email.find('@') == -1:
             raise ServiceException(ServiceException.bad_data,
                                    "Email looks invalid: " + email)
@@ -123,6 +124,12 @@ class UsersService(BaseService):
             if k != "status" and k not in set(UsersService.required_create_fields):
                 raise ServiceException(ServiceException.bad_data,
                                        "Invalid field: " + k)
-        return UsersRDB.update_user(email=email, data=data)
+        if user_id is None:
+            raise ServiceException(ServiceException.bad_data,
+                                   "Missing field id")
+        # Append an new id to the data. If an update success, it should replace
+        # the previous id to the new generated one
+        data['id'] = str(uuid4())
+        return UsersRDB.update_user(email=email, data=data, user_id=user_id)
 
 

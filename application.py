@@ -176,7 +176,7 @@ def user_email(email):
     rsp_txt = None
 
     try:
-
+        rsp_id = None
         user_service = _get_user_service()
 
         logger.error("/email: _user_service = " + str(user_service))
@@ -187,6 +187,7 @@ def user_email(email):
 
             if rsp is not None:
                 rsp_data = rsp
+                rsp_id = rsp["id"]
                 rsp_status = 200
                 rsp_txt = "OK"
             else:
@@ -195,21 +196,22 @@ def user_email(email):
                 rsp_txt = "NOT FOUND"
 
         elif inputs["method"] == "PUT":
-            id = user_service.update_user(email, inputs["body"])
-            if id is not None:
+            req_id = inputs["headers"].get("Etag", None)
+            rsp_id = user_service.update_user(email, inputs["body"], req_id)
+            if rsp_id is not None:
                 rsp_status = 200
-                rsp_txt = "id = " + id + " user updated."
+                rsp_txt = "id = " + rsp_id + " user updated."
             else:
                 rsp_data = None
                 rsp_status = 404
                 rsp_txt = "can not update"
 
         elif request.method == 'DELETE':
-            id = user_service.delete_user(email)
-            if id is not None:
+            rsp_id = user_service.delete_user(email, inputs["headers"]["Etag"])
+            if rsp_id is not None:
                 rsp_status = 200
-                rsp_txt = "id = " + id + " user deleted."
-                rsp_data = id
+                rsp_txt = "id = " + rsp_id + " user deleted."
+                rsp_data = rsp_id
             else:
                 rsp_data = None
                 rsp_status = 404
@@ -224,6 +226,9 @@ def user_email(email):
             full_rsp = Response(json.dumps(rsp_data), status=rsp_status, content_type="application/json")
         else:
             full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+        if rsp_id is not None:
+            full_rsp.headers["ETAG"] = rsp_id
 
     except Exception as e:
         log_msg = "/email: Exception = " + str(e)
