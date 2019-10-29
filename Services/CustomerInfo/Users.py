@@ -103,8 +103,10 @@ class UsersService(BaseService):
         user_info['id'] = str(uuid4())
         user_info['status'] = 'PENDING'
         result = UsersRDB.create_user(user_info=user_info)
-
-        return result
+        if result:
+            return result
+        else:
+            return None
 
     @classmethod
     def delete_user(cls, email, user_id):

@@ -1,6 +1,6 @@
-import Projects.EB.Middleware.security as security
-from Projects.EB.Context.Context import Context
-from Projects.EB.Services.CustomerInfo.Users import UsersService as user_svc
+import Middleware.security as security
+from Context.Context import Context
+from Services.CustomerInfo.Users import UsersService as user_svc
 
 class RegisterLoginSvc():
 
@@ -23,9 +23,13 @@ class RegisterLoginSvc():
     @classmethod
     def register(cls, data):
         hashed_pw = security.hash_password({"password" : data['password']})
-        data["password"] = hashed_pw
-        result = user_svc.create_user(data)
-        return result
+        data["password"] = str(hashed_pw)
+        user_id = user_svc.create_user(data)
+        if user_id:
+            tok = security.generate_token(data)
+            return data['email'], tok, user_id
+        else:
+            return None
 
     @classmethod
     def login(cls, login_info):
@@ -34,6 +38,6 @@ class RegisterLoginSvc():
         test = str(test)
         if str(test) == s_info['password']:
             tok = security.generate_token(s_info)
-            return tok
+            return tok, login_info['email']
         else:
             return False

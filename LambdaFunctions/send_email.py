@@ -144,9 +144,12 @@ def handle_api_event(method, event):
                 email = token_info.get("em", None)
                 user_id = token_info.get("id", None)
                 full_url = EB_ENDPOINT + "/api/user/" + email
+                # generate an auth token with role 'admin'
+                auth = apij.encode({"msg": "hello from lambda", "time": time.time()}, key=_secret).decode("utf-8")
                 # send the ETAG first to avoid race condition
                 user_resp = requests.put(full_url, json={"status": "ACTIVE"},
-                                         headers={"ETAG": user_id})
+                                         headers={"ETAG": user_id, "Authorization": "Bearer " + auth})
+                print(user_resp.status_code)
                 if user_resp.status_code == 200:
                     redirect_url = S3_ENDPOINT + "/verisuccess"
                     response = respond(None, None, "301", {"Location": redirect_url})
