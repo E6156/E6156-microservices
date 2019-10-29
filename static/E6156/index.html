@@ -28,6 +28,7 @@
     <!-- DFF -->
     <script src="controllers/homeController.js"></script>
     <script src="controllers/profileController.js"></script>
+    <script src="customer_service.js"></script>
     <script src="//connect.facebook.net/en_US/all.js"></script>
 
 </head>
@@ -85,8 +86,8 @@
                                 <label>Confirm Password</label>
                                 <input ng-model="confirm_password" type="password" required>
                             </md-input-container>
-                            <div style="color: maroon">{{resgitrationInfo}}</div>
-                            <md-button type="submit" ng-click="createCustomer(user_info, confirm_password)">Register</md-button>
+                            <div style="color: maroon">{{registrationInfo}}</div>
+                            <md-button type="submit" ng-click="register(user_info, confirm_password)">Register</md-button>
                         </form>
                     </md-content>
                 </md-tab>

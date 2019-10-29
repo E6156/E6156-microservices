@@ -69,11 +69,11 @@ client = boto3.client('ses', region_name=AWS_REGION)
 
 
 # Try to send the email.
-def send_email(em):
+def send_email(em, user_id):
     try:
-        print("em = ", em)
+        print("em = ", em, "user_id = ", user_id)
         url = API_ENDPOINT + "?token=" + \
-              apij.encode({"time": time.time(), "em": em}, key=_secret).decode(encoding='UTF-8')
+              apij.encode({"time": time.time(), "em": em, "id": user_id}, key=_secret).decode(encoding='UTF-8')
         # Provide the contents of the email.
         response = client.send_email(
             Destination={
@@ -126,7 +126,8 @@ def handle_sns_event(records):
             print("Could not parse message.")
 
         em = json_msg["email"]
-        send_email(em)
+        user_id = json_msg["id"]
+        send_email(em, user_id)
 
 
 def handle_api_event(method, event):
@@ -141,8 +142,14 @@ def handle_api_event(method, event):
             if token:
                 token_info = apij.decode(token.encode("utf-8"), key=_secret)
                 email = token_info.get("em", None)
+                user_id = token_info.get("id", None)
                 full_url = EB_ENDPOINT + "/api/user/" + email
-                user_resp = requests.put(full_url, json={"status": "ACTIVE"})
+                # generate an auth token with role 'admin'
+                auth = apij.encode({"msg": "hello from lambda", "time": time.time()}, key=_secret).decode("utf-8")
+                # send the ETAG first to avoid race condition
+                user_resp = requests.put(full_url, json={"status": "ACTIVE"},
+                                         headers={"ETAG": user_id, "Authorization": "Bearer " + auth})
+                print(user_resp.status_code)
                 if user_resp.status_code == 200:
                     redirect_url = S3_ENDPOINT + "/verisuccess"
                     response = respond(None, None, "301", {"Location": redirect_url})
