@@ -1,4 +1,4 @@
-CustomerApp.controller("homeController", function ($scope, $http, $location, $window, $mdDialog) {
+CustomerApp.controller("homeController", function ($scope, $http, $location, $window, CustomerService) {
     console.log("Loaded.")
 
     $scope.lemail = null;
@@ -12,11 +12,16 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
     $scope.useEmailLogin = false;
     $scope.menuSelection = 'home';
 
+    $scope.customerInfo = null;
+
+    sStorage = $window.sessionStorage;
+
     console.log("Controller loaded.");
     console.log("Base URL = " + $location.absUrl());
     console.log("Host = " + $location.host());
     console.log("Port = " + $location.port());
     console.log("Protocol = " + $location.protocol());
+    console.log("CustomerService version = " + CustomerService.get_version());
 
     $scope.navMenu = function (selection) {
         console.log("Selection = " + selection);
@@ -306,46 +311,54 @@ CustomerApp.controller("homeController", function ($scope, $http, $location, $wi
         $("#loginModal").modal("show");
     }
 
-    $scope.getCustomer = function (email, password) {
-        var url = urlBase + "/api/login";
-        $http.post(url, {email, password}).then(
-            function (data) {
-                result = data.data[0]
-                $scope.loginRegisterResult = true
-                $scope.customerInfo = {
-                    lastName: result.last_name,
-                    firstName: result.first_name,
-                    email: result.email
-                }
-                console.log("Data = " + JSON.stringify(result, null, 4));
-                $("#loginModal").modal("hide");
-            },
-            function (error) {
-                console.log("Error = " + JSON.stringify(error, null, 4));
-                $scope.loginInfo = "Wrong login info!"
-            }
-        );
-    }
+    $scope.getCustomer = function(email, password) {
+        CustomerService.driveLogin(
+            email, password
+        ).then(function (result) {
+            console.log("Resolved!")
 
-    $scope.createCustomer = function (user_info, confirm_password) {
-        var url = urlBase + "/api/registrations";
+            CustomerService.getCustomer(email)
+                .then(function(c) {
+                    console.log(c);
+                    $scope.$apply();
+                    $scope.customerInfo = {
+                        lastName: c.last_name,
+                        firstName: c.first_name,
+                        email: c.email
+                    }
+                    $scope.loginRegisterResult = true;
+                    $("#loginModal").modal("hide");
+                })
+                .catch(function(error) {
+                    console.log("Boom!");
+                    console.log(error);
+                });
+        }).
+        catch(function(error) {
+            console.log("Error");
+            console.log(error);
+        })
+    };
+
+    $scope.register = function (user_info, confirm_password) {
+        var url = urlBase + "/api/registration";
         console.log(user_info)
         if (user_info.first_name == null ||user_info.first_name == ""|| user_info.last_name == null || user_info.last_name == "" || user_info.email == null || user_info.email == "" || user_info.password == null || user_info.password == ""){
             $scope.registrationInfo = "Please check your info!";
         } else if (confirm_password != user_info.password){
             $scope.registrationInfo = "Passwords do not match!";
         } else{
-            $http.post(url, user_info).then(
-                function (data) {
-                    result = data.data;
-                    console.log("Data = " + JSON.stringify(result, null, 4));
+            CustomerService.createCustomer(user_info)
+                .then(function(c) {
+                    console.log(c);
                     $scope.registrationInfo = "New user created!";
-                },
-                function (error) {
-                    console.log("Error = " + JSON.stringify(error, null, 4));
+                })
+                .catch(function(error) {
                     $scope.registrationInfo = "Wrong Registration info!";
-                }
-            );
+                    console.log("Boom!");
+                    console.log(error);
+                });
         }
     }
+
 });
