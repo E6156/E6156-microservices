@@ -15,8 +15,10 @@ from Services.RegisterLogin.RegisterLogin import RegisterLoginSvc as RegisterLog
 from Context.Context import Context
 from Middleware.notification import publish_it
 import Middleware.security as middleware_security
+import Middleware.notification as middleware_notification
 from functools import wraps
 from flask import g, request, redirect, url_for
+import jwt
 
 
 # Setup and use the simple, common Python logging framework. Send log messages to the console.
@@ -76,6 +78,29 @@ application.add_url_rule('/<username>', 'hello', (lambda username:
 _default_context = None
 _user_service = None
 _registration_service = None
+
+@application.after_request
+def after_decorator(rsp):
+    return rsp
+
+
+def do_something_after(rsp):
+    token = request.headers.get("Authorization", None)
+    info = jwt.decode(token.split(' ')[1].encode("utf-8"), key=Context.get_default_context().get_context("JWT_SECRET"))
+    role = info.get('role', None)
+    #anyone can read
+    if request.method == 'GET':
+        middleware_notification.publish_change_event(request.url, request.json)
+    #only an admin can delete
+    if request.method == 'DELETE':
+        if role == 'admin':
+            middleware_notification.publish_change_event(request.url, request.json)
+    #a customer can update
+    if request.method == 'PUT':
+        if role == 'student':
+            middleware_notification.publish_change_event(request.url, request.json)
+    return rsp
+
 
 def _get_default_context():
 
@@ -393,4 +418,5 @@ if __name__ == "__main__":
     init()
 
     application.debug = True
+    application.after_request(do_something_after)
     application.run()
