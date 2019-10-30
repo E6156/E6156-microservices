@@ -1,26 +1,24 @@
 CustomerApp = angular.module('CustomerApp', [
-    'ngRoute'
+    'ngRoute', 'ngMaterial', 'ngMessages'
 ]);
 
-angular.
-module('CustomerApp').
-config(['$locationProvider', '$routeProvider',
+angular.module('CustomerApp').config(['$locationProvider', '$routeProvider',
     function config($locationProvider, $routeProvider) {
         $locationProvider.hashPrefix('!');
 
         console.log("In route setup.")
 
-        $routeProvider.
-        when('/', {
+        $routeProvider.when('/', {
             templateUrl: 'templates/home.template.html'
-        }).
-        when('/profile', {
+        }).when('/profile', {
             templateUrl: 'templates/profile.template.html'
-        }).
-        when('/baseball', {
+        }).when('/baseball', {
             templateUrl: 'templates/app.template.html'
-        }).
-            otherwise({
+        }).when('/verisuccess', {
+            templateUrl: 'templates/verisuccess.template.html'
+        }).when('/verifail', {
+            templateUrl: 'templates/verifail.template.html'
+        }).otherwise({
             templateUrl: 'templates/home.template.html'
         })
         //when('/phones/:phoneId', {

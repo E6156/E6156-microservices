@@ -88,6 +88,7 @@ def run_q(sql, args=None, fetch=True, cur=None, conn=None, commit=True):
 
         logger.debug("Executing SQL = " + log_message)
 
+        _default_connection.ping(reconnect=True)
         res = cur.execute(sql, args)
 
         if fetch:
@@ -208,19 +209,6 @@ def create_update(table_name, new_values, template):
     sql = "update " + table_name + " set " + s_clause + " "+ w_clause
 
     return sql, args
-
-def delete(table_name, template):
-    """
-
-    :param new_values: A dictionary containing cols and the new values.
-    :param template: A template to form the where clause.
-    :return: An update statement template and args.
-    """
-    w_clause, args = template_to_where_clause(template)
-
-    sql = "delete from " + table_name + " " + w_clause
-
-    return (sql, args)
 
 
 

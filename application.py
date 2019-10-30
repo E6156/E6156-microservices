@@ -5,14 +5,19 @@
 # - requests enables accessing the elements of an incoming HTTP/REST request.
 #
 from flask import Flask, Response, request
+from flask_cors import CORS
 
 from datetime import datetime
 import json
 
-from CustomerInfo.Users import UsersService as UserService
+from Services.CustomerInfo.Users import UsersService as UserService
+from Services.RegisterLogin.RegisterLogin import RegisterLoginSvc as RegisterLoginSvc
 from Context.Context import Context
+from Middleware.notification import publish_it
+import Middleware.security as middleware_security
+from functools import wraps
+from flask import g, request, redirect, url_for
 
-import os
 
 # Setup and use the simple, common Python logging framework. Send log messages to the console.
 # The application should get the log level out of the context. We will change later.
@@ -21,6 +26,15 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not middleware_security.authorize(request.url_rule, request.method,
+                                             request.headers.get("Authorization", None)):
+            return Response("Please login first", status=403, content_type="text/plain")
+        return f(*args, **kwargs)
+    return decorated_function
 
 ###################################################################################################################
 #
@@ -45,6 +59,7 @@ footer_text = '</body>\n</html>'
 # EB looks for an 'application' callable by default.
 # This is the top-level application that receives and routes requests.
 application = Flask(__name__)
+CORS(application)
 
 # add a rule for the index page. (Put here by AWS in the sample)
 application.add_url_rule('/', 'index', (lambda: header_text +
@@ -60,7 +75,7 @@ application.add_url_rule('/<username>', 'hello', (lambda username:
 
 _default_context = None
 _user_service = None
-
+_registration_service = None
 
 def _get_default_context():
 
@@ -80,12 +95,23 @@ def _get_user_service():
 
     return _user_service
 
+
+def _get_registration_service():
+    global _registration_service
+
+    if _registration_service is None:
+        _registration_service = RegisterLoginSvc()
+
+    return _registration_service
+
+
 def init():
 
     global _default_context, _user_service
 
     _default_context = Context.get_default_context()
     _user_service = UserService(_default_context)
+    _registration_service = RegisterLoginSvc()
 
     logger.debug("_user_service = " + str(_user_service))
 
@@ -141,6 +167,7 @@ def log_response(method, status, data, txt):
 
 # This function performs a basic health check. We will flesh this out.
 @application.route("/health", methods=["GET"])
+@login_required
 def health_check():
 
     rsp_data = { "status": "healthy", "time": str(datetime.now()) }
@@ -163,8 +190,8 @@ def demo(parameter):
 
 
 @application.route("/api/user/<email>", methods=["GET", "PUT", "DELETE"])
+@login_required
 def user_email(email):
-
     global _user_service
 
     inputs = log_and_extract_input(demo, { "parameters": email })
@@ -173,7 +200,7 @@ def user_email(email):
     rsp_txt = None
 
     try:
-
+        rsp_id = None
         user_service = _get_user_service()
 
         logger.error("/email: _user_service = " + str(user_service))
@@ -184,6 +211,7 @@ def user_email(email):
 
             if rsp is not None:
                 rsp_data = rsp
+                rsp_id = rsp["id"]
                 rsp_status = 200
                 rsp_txt = "OK"
             else:
@@ -192,24 +220,22 @@ def user_email(email):
                 rsp_txt = "NOT FOUND"
 
         elif inputs["method"] == "PUT":
-            user_info = request.json
-            id = user_service.update_user(user_info)
-            if id is not None:
+            req_id = inputs["headers"].get("Etag", None)
+            rsp_id = user_service.update_user(email, inputs["body"], req_id)
+            if rsp_id is not None:
                 rsp_status = 200
-                rsp_txt = "id = " + id + " password changed."
-                rsp_data = id
+                rsp_txt = "id = " + rsp_id + " user updated."
             else:
                 rsp_data = None
                 rsp_status = 404
-                rsp_txt = "NOT FOUND"
+                rsp_txt = "can not update"
 
         elif request.method == 'DELETE':
-            user_info = request.json
-            id = user_service.delete_user(user_info)
-            if id is not None:
+            rsp_id = user_service.delete_user(email, inputs["headers"]["Etag"])
+            if rsp_id is not None:
                 rsp_status = 200
-                rsp_txt = "id = " + id + " user deleted."
-                rsp_data = id
+                rsp_txt = "id = " + rsp_id + " user deleted."
+                rsp_data = rsp_id
             else:
                 rsp_data = None
                 rsp_status = 404
@@ -225,6 +251,9 @@ def user_email(email):
         else:
             full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
 
+        if rsp_id is not None:
+            full_rsp.headers["ETAG"] = rsp_id
+
     except Exception as e:
         log_msg = "/email: Exception = " + str(e)
         logger.error(log_msg)
@@ -236,23 +265,123 @@ def user_email(email):
 
     return full_rsp
 
-@application.route("/api/registrations", methods=["POST"])
+@application.route("/api/registration", methods=["POST"])
 def registration():
+
+    inputs = log_and_extract_input(demo, {"parameters": None})
+    rsp_data = None
+    rsp_status = None
+    rsp_txt = None
+
     try:
-        user_service = _get_user_service()
-        user_info = request.json
-        id = user_service.create_user(user_info)
-        if id is not None:
-            rsp_txt = "USER CREATED: "+id
-            rsp = Response(rsp_txt, status=201, mimetype='text/plain')
+
+        r_svc = _get_registration_service()
+
+        logger.error("/api/registration: _r_svc = " + str(r_svc))
+
+        auth = None
+        link = None
+        user_id = None
+        if inputs["method"] == "POST":
+
+            rsp = r_svc.register(inputs['body'])
+
+            if rsp is not None:
+                rsp_data = rsp
+                rsp_status = 201
+                rsp_txt = "CREATED"
+                link = rsp_data[0]
+                auth = rsp_data[1]
+                user_id = rsp_data[2]
+            else:
+                rsp_data = None
+                rsp_status = 404
+                rsp_txt = "NOT FOUND"
+        else:
+            rsp_data = None
+            rsp_status = 501
+            rsp_txt = "NOT IMPLEMENTED"
+
+        if rsp_data is not None:
+            # TODO Generalize generating links
+            headers = {"Location": "/api/users/" + link}
+            # Workaround to make authorization seen by Angular frontend
+            headers["Access-Control-Expose-Headers"] = "Authorization"
+            headers["Authorization"] = "Bearer " + auth
+            # Send the email and id to lambda in order to generate the query string with ETAG
+            publish_it({"email": link, "id": user_id})
+            full_rsp = Response(rsp_txt, headers=headers,
+                                status=rsp_status, content_type="text/plain")
+        else:
+            full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
     except Exception as e:
-        log_msg = "/user: Exception = " + str(e)
+        log_msg = "/api/registration: Exception = " + str(e)
         logger.error(log_msg)
         rsp_status = 500
-        rsp_txt = "INTERNAL SERVER ERROR. " + log_msg
-        rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
-    return rsp
+        rsp_txt = "INTERNAL SERVER ERROR. Please take COMSE6156 -- Cloud Native Applications."
+        full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
 
+    log_response("/api/registration", rsp_status, rsp_data, rsp_txt)
+
+    return full_rsp
+
+
+@application.route("/api/login", methods=["POST"])
+def login():
+
+    inputs = log_and_extract_input(demo, {"parameters": None})
+    rsp_data = None
+    rsp_status = None
+    rsp_txt = None
+
+    try:
+        rsp = None
+        r_svc = _get_registration_service()
+
+        logger.error("/api/login: _r_svc = " + str(r_svc))
+
+        if inputs["method"] == "POST":
+
+            rsp = r_svc.login(inputs['body'])
+
+            if rsp is not None and rsp is not False:
+                rsp_data = "OK"
+                rsp_status = 201
+                rsp_txt = "CREATED"
+            else:
+                rsp_data = None
+                rsp_status = 403
+                rsp_txt = "NOT AUTHORIZED"
+        else:
+            rsp_data = None
+            rsp_status = 501
+            rsp_txt = "NOT IMPLEMENTED"
+
+        if rsp_data is not None:
+            # TODO Generalize generating links
+            headers = {"Authorization": "Bearer " + rsp[0]}
+            headers["Access-Control-Expose-Headers"] = "Authorization"
+            headers["Location"] = "/api/users/" + rsp[1]
+            full_rsp = Response(json.dumps(rsp_data, default=str), headers=headers,
+                                status=rsp_status, content_type="application/json")
+        else:
+            full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+    except Exception as e:
+        log_msg = "/api/registration: Exception = " + str(e)
+        logger.error(log_msg)
+        rsp_status = 500
+        rsp_txt = "INTERNAL SERVER ERROR. Please take COMSE6156 -- Cloud Native Applications."
+        full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+    log_response("/api/registration", rsp_status, rsp_data, rsp_txt)
+
+    return full_rsp
+
+@application.route("/api/logout", methods=["DELETE"])
+def logout():
+    pass
 
 logger.debug("__name__ = " + str(__name__))
 # run the app.

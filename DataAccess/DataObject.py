@@ -31,13 +31,36 @@ class UsersRDB(BaseDataObject):
 
     @classmethod
     def get_by_email(cls, email):
-
-        sql = "select * from e6156.users where email=%s"
-        res, data = data_adaptor.run_q(sql=sql, args=(email), fetch=True)
+        # Only get the user not deleted
+        sql = "select * from e6156.users where email=%s and status<>%s"
+        res, data = data_adaptor.run_q(sql=sql, args=(email, 'DELETED'), fetch=True)
         if data is not None and len(data) > 0:
             result =  data[0]
         else:
             result = None
+
+        return result
+
+    @classmethod
+    def get_login(cls, login_info):
+
+        result = None
+
+        login_fields = {"email","first_name","last_name","password"}
+        try:
+            sql, args = data_adaptor.create_select(table_name="users", template=login_info, fields=login_fields)
+            res, data = data_adaptor.run_q(sql, args)
+            if data is not None and len(data) > 0:
+                result = data
+            else:
+                result = None
+        except pymysql.err.IntegrityError as ie:
+            if ie.args[0] == 1062:
+                raise (DataException(DataException.duplicate_key))
+            else:
+                raise DataException()
+        except Exception as e:
+            raise DataException()
 
         return result
 
@@ -64,16 +87,16 @@ class UsersRDB(BaseDataObject):
         return result
 
     @classmethod
-    def delete_user(cls, user_info):
-        result = None
+    def delete_user(cls, email, new_user_id, old_user_id):
         try:
-            template = {'id': user_info['id']}
-            sql, args = data_adaptor.delete(table_name="users", template=template)
+            sql, args = data_adaptor.create_update(table_name="users",
+                                                   new_values={"status": "DELETED", "id": new_user_id},
+                                                   template={"email": email, "id": old_user_id})
             res, data = data_adaptor.run_q(sql, args)
             if res != 1:
                 result = None
             else:
-                result = user_info['id']
+                result = new_user_id
 
         except Exception as e:
             raise DataException()
@@ -81,17 +104,16 @@ class UsersRDB(BaseDataObject):
         return result
 
     @classmethod
-    def update_user(cls, user_info):
-        result = None
+    def update_user(cls, email, data, user_id):
         try:
-            new_val = {'password': user_info['password']}
-            template = {'id': user_info['id']}
-            sql, args = data_adaptor.create_update(table_name="users", new_values=new_val, template=template)
-            res, data = data_adaptor.run_q(sql, args)
+            sql, args = data_adaptor.create_update(table_name="users",
+                                                   new_values=data,
+                                                   template={"email": email, "id": user_id})
+            res, _ = data_adaptor.run_q(sql, args)
             if res != 1:
                 result = None
             else:
-                result = user_info['id']
+                result = data['id']
 
         except Exception as e:
             raise DataException()
