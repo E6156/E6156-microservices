@@ -164,6 +164,57 @@ def demo(parameter):
     rsp = Response(json.dumps(msg), status=200, content_type="application/json")
     return rsp
 
+@application.route("/api/users", methods=["GET"])
+def users():
+
+    global _user_service
+
+    inputs = log_and_extract_input(users)
+    rsp_data = None
+
+    try:
+
+        user_service = _get_user_service()
+
+        logger.error("/users: _user_service = " + str(user_service))
+
+        if inputs["method"] == "GET":
+
+            query_params = inputs["query_params"]
+
+            if "fields" not in inputs["query_params"]:
+                fields = None
+            else:
+                fields = inputs["query_params"].pop("fields").split(",")
+
+            rsp = user_service.get_users(query_params, fields)
+
+            if rsp is not None:
+                rsp_data = rsp
+                rsp_status = 200
+                rsp_txt = "OK"
+
+        else:
+            rsp_data = None
+            rsp_status = 501
+            rsp_txt = "NOT IMPLEMENTED"
+
+        if rsp_data is not None:
+            full_rsp = Response(json.dumps(rsp_data), status=rsp_status, content_type="application/json")
+        else:
+            full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+    except Exception as e:
+        log_msg = "/users: Exception = " + str(e)
+        logger.error(log_msg)
+        rsp_status = 500
+        rsp_txt = "INTERNAL SERVER ERROR. Please take COMSE6156 -- Cloud Native Applications."
+        full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+    log_response("/users", rsp_status, rsp_data, rsp_txt)
+
+    return full_rsp
+
 
 @application.route("/api/user/<email>", methods=["GET", "PUT", "DELETE"])
 def user_email(email):

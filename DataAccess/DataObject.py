@@ -42,6 +42,19 @@ class UsersRDB(BaseDataObject):
         return result
 
     @classmethod
+    def get_users(cls, params, fields):
+
+        sql, args = data_adaptor.create_select(table_name="users", template=params, fields=fields)
+        res, data = data_adaptor.run_q(sql, args)
+
+        if data is not None and len(data) > 0:
+            result = data
+        else:
+            result = None
+
+        return result
+
+    @classmethod
     def get_login(cls, login_info):
 
         result = None
