@@ -79,6 +79,12 @@ class UsersService(BaseService):
         return result
 
     @classmethod
+    def get_users(cls, params, fields):
+
+        result = UsersRDB.get_users(params, fields)
+        return result
+
+    @classmethod
     def get_login(cls, email):
 
         result = UsersRDB.get_login(email)

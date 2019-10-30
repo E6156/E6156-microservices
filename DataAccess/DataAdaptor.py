@@ -138,7 +138,7 @@ def template_to_where_clause(template):
     """
 
     if template is None or template == {}:
-        result = (None, None)
+        result = ("", None)
     else:
         args = []
         terms = []
