@@ -10,6 +10,3 @@ def publish_it(msg):
 
     client.publish(TopicArn=topic_arn,
                    Message=txt_msg)
-
-def publish_change_event(url, body):
-    pass

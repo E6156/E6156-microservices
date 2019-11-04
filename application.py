@@ -88,17 +88,15 @@ def do_something_after(rsp):
     token = request.headers.get("Authorization", None)
     info = jwt.decode(token.split(' ')[1].encode("utf-8"), key=Context.get_default_context().get_context("JWT_SECRET"))
     role = info.get('role', None)
-    #anyone can read
-    if request.method == 'GET':
-        middleware_notification.publish_change_event(request.url, request.json)
+
     #only an admin can delete
     if request.method == 'DELETE':
-        if role == 'admin':
-            middleware_notification.publish_change_event(request.url, request.json)
+        if role != 'admin':
+            rsp = Response("Not authorized", status=403, content_type="text/plain")
     #a customer can update
     if request.method == 'PUT':
-        if role == 'student':
-            middleware_notification.publish_change_event(request.url, request.json)
+        if role != 'student':
+            rsp = Response("Not authorized", status=403, content_type="text/plain")
     return rsp
 
 
