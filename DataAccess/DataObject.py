@@ -1,6 +1,7 @@
 import DataAccess.DataAdaptor as data_adaptor
 from abc import ABC, abstractmethod
 import pymysql.err
+import Middleware.security as middleware_security
 
 class DataException(Exception):
 
@@ -39,7 +40,7 @@ class UsersRDB(BaseDataObject):
         else:
             result = None
 
-        return result
+        return result, middleware_security.calc_hash(result)
 
     @classmethod
     def get_users(cls, params, fields):
@@ -99,39 +100,55 @@ class UsersRDB(BaseDataObject):
 
         return result
 
-    @classmethod
-    def delete_user(cls, email, new_user_id, old_user_id):
-        try:
-            sql, args = data_adaptor.create_update(table_name="users",
-                                                   new_values={"status": "DELETED", "id": new_user_id},
-                                                   template={"email": email, "id": old_user_id})
-            res, data = data_adaptor.run_q(sql, args)
-            if res != 1:
-                result = None
-            else:
-                result = new_user_id
-
-        except Exception as e:
-            raise DataException()
-
-        return result
 
     @classmethod
-    def update_user(cls, email, data, user_id):
+    def update_user(cls, email, data, etag):
+        result = None
+        conn = None
+        cursor = None
         try:
-            sql, args = data_adaptor.create_update(table_name="users",
-                                                   new_values=data,
-                                                   template={"email": email, "id": user_id})
-            res, _ = data_adaptor.run_q(sql, args)
-            if res != 1:
-                result = None
+            conn = data_adaptor._get_default_connection()
+            cursor = conn.cursor()
+
+            # a wrapper function helps to pass params
+            def run_q(sql_, args_):
+                return data_adaptor.run_q(sql_, args_, cur=cursor, conn=conn, commit=False)
+
+            sql, args = data_adaptor.create_select(table_name="users", template={"email": email})
+
+            _, prev_data = run_q(sql, args)
+
+            if prev_data is not None and len(prev_data) > 0:
+                prev_etag = middleware_security.calc_hash(prev_data[0])
+                if prev_etag != etag:
+                    raise Exception('outdated Etag!')
+                sql, args = data_adaptor.create_update(table_name="users",
+                                                       new_values=data,
+                                                       template={"email": email})
+                res, _ = run_q(sql, args)
+                if res != 1:
+                    raise Exception('cannot update data!')
+                else:
+                    # calc new etag based on updated data
+                    new_data = prev_data[0]
+                    for k, v in data.items():
+                        new_data[k] = v
+                    result = new_data['id'], middleware_security.calc_hash(new_data)
+                # commit the successful transaction
+                conn.commit()
             else:
-                result = data['id']
+                raise Exception('cannot retrieve data')
 
         except Exception as e:
-            raise DataException()
-
-        return result
-
+            # rollback if anything bad happens
+            conn.rollback()
+            raise e
+        finally:
+            # closing database connection.
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+            return result
 
 

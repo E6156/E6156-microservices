@@ -276,18 +276,17 @@ def user_email(email):
     rsp_txt = None
 
     try:
-        rsp_id = None
+        etag = None
         user_service = _get_user_service()
 
         logger.error("/email: _user_service = " + str(user_service))
 
         if inputs["method"] == "GET":
 
-            rsp = user_service.get_by_email(email)
+            rsp, etag = user_service.get_by_email(email)
 
             if rsp is not None:
                 rsp_data = rsp
-                rsp_id = rsp["id"]
                 rsp_status = 200
                 rsp_txt = "OK"
             else:
@@ -296,8 +295,7 @@ def user_email(email):
                 rsp_txt = "NOT FOUND"
 
         elif inputs["method"] == "PUT":
-            req_id = inputs["headers"].get("Etag", None)
-            rsp_id = user_service.update_user(email, inputs["body"], req_id)
+            rsp_id, etag = user_service.update_user(email, inputs["body"], inputs["headers"].get("Etag", None))
             if rsp_id is not None:
                 rsp_status = 200
                 rsp_txt = "id = " + rsp_id + " user updated."
@@ -307,7 +305,7 @@ def user_email(email):
                 rsp_txt = "can not update"
 
         elif request.method == 'DELETE':
-            rsp_id = user_service.delete_user(email, inputs["headers"]["Etag"])
+            rsp_id, etag = user_service.delete_user(email, inputs["headers"].get("Etag", None))
             if rsp_id is not None:
                 rsp_status = 200
                 rsp_txt = "id = " + rsp_id + " user deleted."
@@ -327,8 +325,8 @@ def user_email(email):
         else:
             full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
 
-        if rsp_id is not None:
-            full_rsp.headers["ETAG"] = rsp_id
+        if etag is not None:
+            full_rsp.headers["ETAG"] = etag
 
     except Exception as e:
         log_msg = "/email: Exception = " + str(e)
