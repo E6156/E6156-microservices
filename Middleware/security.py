@@ -1,4 +1,6 @@
 import jwt
+import hashlib
+import json
 from Context.Context import Context
 from time import time
 
@@ -30,7 +32,7 @@ def generate_token(info):
     token_info = {}
     token_info['timestamp'] = str(time())
     email = token_info['email'] = info['email']
-    if email == '':
+    if email == _context.get_context("admin_email"):
         token_info['role']='admin'
     else:
         token_info['role']='student'
@@ -49,10 +51,7 @@ auth_rules = {
     ("/api/user/<email>", "PUT"),
     ("/api/user/<email>", "DELETE"),
 }
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+
 
 def authorize(url, method, token):
     key = (str(url), str(method))
@@ -73,5 +72,8 @@ def authorize(url, method, token):
             return role == "admin"
         return role == "admin" or role == "student"
     except Exception as e:
-        logger.error("security e: " + str(e))
         return False
+
+
+def calc_hash(data):
+    return str(hashlib.md5(json.dumps(data).encode()).hexdigest())

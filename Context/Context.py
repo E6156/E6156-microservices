@@ -23,9 +23,12 @@ class Context():
     def get_default_context(cls):
 
         db_connect_info = os.environ['db_connect_info']
+        admin_email = os.environ['admin_email']
         db_connect_info = json.loads(db_connect_info)
 
-        ctx = { "db_connect_info": db_connect_info, "JWT_SECRET": "secret" }
+        ctx = { "db_connect_info": db_connect_info,
+                "JWT_SECRET": "secret",
+                "admin_email": admin_email}
 
         result = Context(ctx)
         return result

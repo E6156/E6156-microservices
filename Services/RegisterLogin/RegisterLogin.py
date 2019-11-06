@@ -33,11 +33,14 @@ class RegisterLoginSvc():
 
     @classmethod
     def login(cls, login_info):
-        test = security.hash_password({"password": login_info['password']})
-        s_info = user_svc.get_by_email(login_info['email'])
-        test = str(test)
-        if str(test) == s_info['password']:
-            tok = security.generate_token(s_info)
-            return tok, login_info['email']
-        else:
+        try:
+            test = security.hash_password({"password": login_info['password']})
+            s_info, _ = user_svc.get_by_email(login_info['email'])
+            test = str(test)
+            if str(test) == s_info['password']:
+                tok = security.generate_token(s_info)
+                return tok, login_info['email']
+            else:
+                return False
+        except Exception as e:
             return False
