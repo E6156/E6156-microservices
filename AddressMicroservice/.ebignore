@@ -10,4 +10,3 @@ virt/*
 LambdaFunctions/*
 static/*
 __pycache__/
-AddressMicroservice
