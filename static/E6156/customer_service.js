@@ -74,7 +74,16 @@
                             console.log(header)
                             $http.get(url, header).then(
                                 function (data) {
-                                    var rsp = data;
+                                    var json_data = data;
+
+                                    json_data["data"] = {
+                                        "id": data["data"]["id"],
+                                        "email": data["data"]["email"],
+                                        "last_name": data["data"]["last_name"],
+                                        "first_name": data["data"]["first_name"],
+                                        "status": data["data"]["status"]
+                                     };
+                                    var rsp = json_data;
                                     console.log("RSP = " + JSON.stringify(rsp, null, 4));
                                     resolve(rsp.data);
                                 },
