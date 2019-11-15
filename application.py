@@ -85,16 +85,21 @@ def after_decorator(rsp):
 
 
 def do_something_after(rsp):
-    token = request.headers.get("Authorization", None)
-    info = jwt.decode(token.split(' ')[1].encode("utf-8"), key=Context.get_default_context().get_context("JWT_SECRET"))
-    role = info.get('role', None)
 
     #only an admin can delete
     if request.method == 'DELETE':
+        token = request.headers.get("Authorization", None)
+        info = jwt.decode(token.split(' ')[1].encode("utf-8"),
+                          key=Context.get_default_context().get_context("JWT_SECRET"))
+        role = info.get('role', None)
         if role != 'admin':
             rsp = Response("Not authorized", status=403, content_type="text/plain")
     #a customer can update
     if request.method == 'PUT':
+        token = request.headers.get("Authorization", None)
+        info = jwt.decode(token.split(' ')[1].encode("utf-8"),
+                          key=Context.get_default_context().get_context("JWT_SECRET"))
+        role = info.get('role', None)
         if role != 'student':
             rsp = Response("Not authorized", status=403, content_type="text/plain")
     return rsp
