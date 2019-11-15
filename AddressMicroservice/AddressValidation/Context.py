@@ -21,6 +21,8 @@ else:
     from AddressValidation.ValidatorClient import ValidatorClient
     _context['address_validator'] = ValidatorClient
 
+_context['table_name'] = os.environ.get('table_name')
+_context['table_region'] = os.environ.get('table_region')
 
 def get_context():
     return _context
