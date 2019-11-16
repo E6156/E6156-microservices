@@ -141,7 +141,15 @@ def _get_registration_service():
 
     return _registration_service
 
+def linked_data_assembler(uid):
+    href_string = "/api/profile/" + str(uid)
+    profile_link_frame = {
+        "rel" : "profile",
+        "href" : href_string,
+        "method" : "GET"
+    }
 
+    return profile_link_frame
 def init():
 
     global _default_context, _user_service
@@ -305,6 +313,13 @@ def user_email(email):
                 rsp_data = None
                 rsp_status = 404
                 rsp_txt = "NOT FOUND"
+
+            if "links" not in rsp:
+                rsp["links"] = []
+
+            link_to_profile = linked_data_assembler(rsp["id"])
+
+            rsp["links"].append(link_to_profile)
 
         elif inputs["method"] == "PUT":
             rsp_id, etag = user_service.update_user(email, inputs["body"], inputs["headers"].get("Etag", None))
