@@ -54,7 +54,7 @@ class ValidatorService(Validator):
             # If we got more than one address, then there was something wrong and the address into is imprecise
             j_data = result.json()
 
-            if len(j_data) > 1:
+            if len(j_data) > 1 or len(j_data) == 0:
                 rsp = None
             else:
                 rsp = j_data[0]['components']

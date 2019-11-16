@@ -15,7 +15,7 @@ from AddressValidation.ValidatorService import ValidatorService
 
 # Service for getting context information.
 import AddressValidation.Context as Context
-
+from AddressValidation.DataObject import AddressDynamoDB as AddressDynamoDB
 import json
 
 # Create the application instances
@@ -34,7 +34,7 @@ api = Api(application,
 )
 
 # A NameSpace is a top level collection of paths. The only namespace in this applicaton is Addresses
-ns = api.namespace('Addresses', description='APIs for validating and obtaining maling address info.')
+ns = api.namespace('/', description='APIs for validating and obtaining maling address info.')
 
 # Models are schema definitions for JSON objects passed into and out of operations in bodies.
 # There are two approaches to defining a model. 1) api.model, 2) JSON Schema.
@@ -48,6 +48,13 @@ address = api.model('Address', {
     'state': fields.String(required=True, description='State name'),
     'zipcode':  fields.String(required=True, description='State name'),
     'more fields': fields.String(required=True, description='Blah, blah ...')
+})
+
+raw_address = api.model('RawAddress', {
+    'street': fields.String(required=False, description='Street name', example='1600 Pensylvania Ave'),
+    'city': fields.String(required=False, description='City name', example='Washington'),
+    'state': fields.String(required=False, description='State name', example='dc'),
+    'zipcode': fields.String(required=False, description='You guessed it.', example=''),
 })
 
 # Information about an individual zipcode returns in a zipcode lookup.
@@ -168,14 +175,13 @@ class Zipcodes(Resource):
 
 @ns.route('/addresses')
 class Addresses(Resource):
-
-    @ns.doc('Validate that an address exists and is valid',
-        params= {"street": "Street address", "city": "City name", "state": "State name",
-                 "zipcode": "You guessed it."})
+    @ns.doc('Validate that an address exists and is valid')
     @ns.response(code=200, description="List of common city names for city and relevant zipcodes.",
                                        model=address_response)
-    def get(self):
-        address = request.args
+    @ns.response(code=400, description="Invalid address")
+    @ns.expect(raw_address, validate=True)
+    def post(self):
+        address = request.json
 
         args={}
         city = address.get('city, None')
@@ -195,8 +201,25 @@ class Addresses(Resource):
             args['zipcode'] = zipcode
 
         t_answer = v_service.validate_address(address)
+        if t_answer and AddressDynamoDB.post_address(t_answer):
+            return Response(json.dumps(t_answer), status=200, content_type="application/json")
+        else:
+            return Response('Invalid address', status=400, content_type="text/plain")
 
-        return Response(json.dumps(t_answer), status=200, content_type="application/json")
+
+@ns.route('/addresses/<address_id>')
+class AddressId(Resource):
+    @ns.doc('Query posted address by address_id',
+        params= {"address_id": "The deliver_point_barcode is the address_id."})
+    @ns.response(code=200, description="List of common city names for city and relevant zipcodes.",
+                                       model=address_response)
+    @ns.response(code=404, description="No data")
+    def get(self, address_id):
+        resp = AddressDynamoDB.get_address(address_id)
+        if resp:
+            return Response(json.dumps(resp), status=200, content_type="application/json")
+        else:
+            return Response('No data', status=404, content_type="text/plain")
 
 
 if __name__ == "__main__":
