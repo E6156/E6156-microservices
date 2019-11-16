@@ -79,6 +79,18 @@ class UsersRDB(BaseDataObject):
         return result
 
     @classmethod
+    def get_profile(cls, param_id):
+        # Only get the user not deleted
+        sql = "select * from e6156.profile_entries where user_id=%s"
+        res, data = data_adaptor.run_q(sql=sql, args=(param_id), fetch=True)
+        if data is not None and len(data) > 0:
+            result =  data[0]
+        else:
+            result = None
+
+        return result
+
+    @classmethod
     def create_user(cls, user_info):
 
         result = None
