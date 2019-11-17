@@ -92,9 +92,6 @@ class UsersService(BaseService):
 
     @classmethod
     def create_user(cls, user_info):
-
-
-
         for f in UsersService.required_create_fields:
             v = user_info.get(f, None)
             if v is None:

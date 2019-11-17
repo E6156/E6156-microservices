@@ -22,6 +22,54 @@ class BaseDataObject(ABC):
     def create_instance(cls, data):
         pass
 
+class ProfileEntriesRDB(BaseDataObject):
+
+    @classmethod
+    def get_profile(cls, param_id):
+        # Only get the user not deleted
+        sql = "select * from e6156.profile_entries where user_id=%s"
+        res, data = data_adaptor.run_q(sql=sql, args=(param_id), fetch=True)
+        if data is not None and len(data) > 0:
+            result =  data[0]
+        else:
+            result = None
+
+        return result
+
+    @classmethod
+    def get_user_profile(cls, params, fields):
+
+        sql, args = data_adaptor.create_select(table_name="profile_entries", template=params, fields=fields)
+        res, data = data_adaptor.run_q(sql, args)
+
+        if data is not None and len(data) > 0:
+            result = data
+        else:
+            result = None
+
+        return result
+
+    @classmethod
+    def create_profile_entry(cls, entries):
+
+        result = None
+
+        try:
+            sql, args = data_adaptor.create_insert(table_name="profile_entries", row=entries)
+            res, data = data_adaptor.run_q(sql, args)
+            if res != 1:
+                result = None
+            else:
+                result = entries['user_id']
+        except pymysql.err.IntegrityError as ie:
+            if ie.args[0] == 1062:
+                raise (DataException(DataException.duplicate_key))
+            else:
+                raise DataException()
+        except Exception as e:
+            raise DataException()
+
+        return result
 
 class UsersRDB(BaseDataObject):
 
@@ -78,17 +126,6 @@ class UsersRDB(BaseDataObject):
 
         return result
 
-    @classmethod
-    def get_profile(cls, param_id):
-        # Only get the user not deleted
-        sql = "select * from e6156.profile_entries where user_id=%s"
-        res, data = data_adaptor.run_q(sql=sql, args=(param_id), fetch=True)
-        if data is not None and len(data) > 0:
-            result =  data[0]
-        else:
-            result = None
-
-        return result
 
     @classmethod
     def create_user(cls, user_info):
