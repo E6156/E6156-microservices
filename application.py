@@ -427,7 +427,7 @@ def user_profile_entry():
 
     return full_rsp
 
-@application.route("/api/profile/<profile_id>", methods=["GET"])
+@application.route("/api/profile/<profile_id>", methods=["GET", "DELETE"])
 @login_required
 def user_profile(profile_id):
     global _profile_service
@@ -458,15 +458,16 @@ def user_profile(profile_id):
                 rsp_status = 404
                 rsp_txt = "NOT FOUND"
 
-        elif inputs["method"] == "PUT":
-            rsp_id, etag = user_service.update_user(email, inputs["body"], inputs["headers"].get("Etag", None))
+        elif request.method == 'DELETE':
+            rsp_id = profile_service.delete_profile(profile_id)
             if rsp_id is not None:
                 rsp_status = 200
-                rsp_txt = "id = " + rsp_id + " user updated."
+                rsp_txt = "id = " + rsp_id + " user deleted."
+                rsp_data = rsp_id
             else:
                 rsp_data = None
                 rsp_status = 404
-                rsp_txt = "can not update"
+                rsp_txt = "NOT FOUND"
 
         if rsp_data is not None:
             full_rsp = Response(json.dumps(rsp_data), status=rsp_status, content_type="application/json")

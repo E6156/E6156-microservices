@@ -71,6 +71,23 @@ class ProfileEntriesRDB(BaseDataObject):
 
         return result
 
+    @classmethod
+    def delete_profile(cls, profile_id):
+        result = None
+
+        sql, args = data_adaptor.create_select(table_name="profile_entries", template={"profile_entry_id": profile_id})
+        _, prev_data = data_adaptor.run_q(sql, args)
+
+        if prev_data is not None and len(prev_data) > 0:
+            sql, args = data_adaptor.delete(table_name="profile_entries", template={"profile_entry_id": profile_id})
+            result, _ = data_adaptor.run_q(sql, args)
+            if result != 1:
+                result = None
+        else:
+            return result
+
+        return "Completed"
+
 class UsersRDB(BaseDataObject):
 
     def __init__(self, ctx):

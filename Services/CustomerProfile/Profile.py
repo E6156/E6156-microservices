@@ -47,6 +47,13 @@ class ProfileService(BaseService):
         return result
 
     @classmethod
+    def delete_profile(cls, param_value):
+
+        result = ProfileEntriesRDB.delete_profile(param_value)
+        return result
+
+
+    @classmethod
     def create_profile_entry(cls, param_value, profile_info):
         for f in ProfileService.required_create_fields:
             v = profile_info.get(f, None)
