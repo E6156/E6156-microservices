@@ -192,21 +192,19 @@ def create_update(table_name, new_values, template):
     :param template: A template to form the where clause.
     :return: An update statement template and args.
     """
-    set_terms = []
     args = []
 
-    for k,v in new_values.items():
-        set_terms.append(k + "=%s")
-        args.append(v)
 
-    s_clause = ",".join(set_terms)
     w_clause, w_args = template_to_where_clause(template)
 
     # There are %s in the SET clause and the WHERE clause. We need to form
     # the combined args list.
     args.extend(w_args)
 
-    sql = "update " + table_name + " set " + s_clause + " "+ w_clause
+    for k,v in new_values.items():
+        new_values_str = k + "=" + "'" + v + "'" 
+
+    sql = "update " + table_name + " set " + str(new_values_str) + " "+ w_clause
 
     return sql, args
 

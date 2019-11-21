@@ -379,7 +379,7 @@ def user_profile_entry():
         logger.error("/profile: _profile_service = " + str(profile_service))
         query_params = inputs["query_params"]
         logger.error("/profile: query = " + str(query_params))
-        logger.error("/profile: query = " + str(json.dumps(inputs["body"])))
+        #logger.error("/profile: query = " + str(json.dumps(inputs["body"])))
         for (key, val) in query_params.items():
             query_key = key
             query_val = val
@@ -427,7 +427,7 @@ def user_profile_entry():
 
     return full_rsp
 
-@application.route("/api/profile/<profile_id>", methods=["GET", "DELETE"])
+@application.route("/api/profile/<profile_id>", methods=["GET", "PUT", "DELETE"])
 @login_required
 def user_profile(profile_id):
     global _profile_service
@@ -457,6 +457,17 @@ def user_profile(profile_id):
                 rsp_data = None
                 rsp_status = 404
                 rsp_txt = "NOT FOUND"
+
+
+        elif inputs["method"] == "PUT":
+            rsp_id = profile_service.update_profile(profile_id, inputs["body"])
+            if rsp_id is not None:
+                rsp_status = 200
+                rsp_txt = "id = " + rsp_id + " profile updated."
+            else:
+                rsp_data = None
+                rsp_status = 404
+                rsp_txt = "can not update"
 
         elif request.method == 'DELETE':
             rsp_id = profile_service.delete_profile(profile_id)

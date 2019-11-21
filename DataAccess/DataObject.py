@@ -27,7 +27,7 @@ class ProfileEntriesRDB(BaseDataObject):
     @classmethod
     def get_profile(cls, param_id):
         # Only get the user not deleted
-        sql = "select * from e6156.profile_entries where user_id=%s"
+        sql = "select * from e6156.profile_entries where profile_entry_id=%s"
         res, data = data_adaptor.run_q(sql=sql, args=(param_id), fetch=True)
         if data is not None and len(data) > 0:
             result =  data[0]
@@ -36,6 +36,17 @@ class ProfileEntriesRDB(BaseDataObject):
 
         return result
 
+    @classmethod
+    def get_profile_query(cls, param_id):
+        # Only get the user not deleted
+        sql = "select * from e6156.profile_entries where user_id=%s"
+        res, data = data_adaptor.run_q(sql=sql, args=(param_id), fetch=True)
+        if data is not None and len(data) > 0:
+            result =  data
+        else:
+            result = None
+
+        return result
     @classmethod
     def get_user_profile(cls, params, fields):
 
@@ -87,6 +98,57 @@ class ProfileEntriesRDB(BaseDataObject):
             return result
 
         return "Completed"
+
+
+    @classmethod
+    def update_profile(cls, param_profile, update_template, data):
+        result = None
+        conn = None
+        cursor = None
+
+        try:
+            conn = data_adaptor._get_default_connection()
+            cursor = conn.cursor()
+
+            # a wrapper function helps to pass params
+            def run_q(sql_, args_):
+                return data_adaptor.run_q(sql_, args_, cur=cursor, conn=conn, commit=False)
+
+            sql, args = data_adaptor.create_select(table_name="profile_entries", template=update_template)
+
+            _, prev_data = run_q(sql, args)
+
+            if prev_data is not None and len(prev_data) > 0:
+
+                sql, args = data_adaptor.create_update(table_name="profile_entries",
+                                                       new_values=data,
+                                                       template=update_template)
+                res, _ = run_q(sql, args)
+                if res != 1:
+                    raise Exception('cannot update data!')
+                else:
+                    # calc new etag based on updated data
+                    new_data = prev_data[0]
+                    for k, v in data.items():
+                        new_data[k] = v
+                    result = new_data['profile_entry_id']
+                # commit the successful transaction
+                conn.commit()
+            else:
+                raise Exception('cannot retrieve data')
+
+        except Exception as e:
+            # rollback if anything bad happens
+            conn.rollback()
+            raise e
+        finally:
+            # closing database connection.
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+            return result
+
 
 class UsersRDB(BaseDataObject):
 

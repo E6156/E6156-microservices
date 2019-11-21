@@ -43,7 +43,7 @@ class ProfileService(BaseService):
     @classmethod
     def get_user_profile(cls, param_value):
 
-        result = ProfileEntriesRDB.get_profile(param_value)
+        result = ProfileEntriesRDB.get_profile_query(param_value)
         return result
 
     @classmethod
@@ -52,6 +52,28 @@ class ProfileService(BaseService):
         result = ProfileEntriesRDB.delete_profile(param_value)
         return result
 
+    @classmethod
+    def update_profile(cls, profile_id, data):
+        template = {}
+        update_data_dict = {}
+        update_data = ""
+        for f in ProfileService.required_create_fields:
+            v = data.get(f, None)
+            if v is None:
+                raise ServiceException(ServiceException.missing_field,
+                                       "Missing field = " + f)
+
+            if f == 'entry_value':
+                update_data = "entry_value="+ "'" +str(data.get(f, None))+"'"
+                update_data_dict['entry_value'] = data.get(f, None)
+            if f == 'entry_type':
+                template['entry_type'] = data.get(f, None)
+            if f == 'entry_subtype':
+                template['entry_subtype'] = data.get(f, None)
+
+        template['user_id'] = profile_id
+
+        return ProfileEntriesRDB.update_profile(param_profile=profile_id, update_template=template, data=update_data_dict)
 
     @classmethod
     def create_profile_entry(cls, param_value, profile_info):
