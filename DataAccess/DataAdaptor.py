@@ -202,7 +202,7 @@ def create_update(table_name, new_values, template):
     args.extend(w_args)
 
     for k,v in new_values.items():
-        new_values_str = k + "=" + "'" + v + "'" 
+        new_values_str = k + "=" + "'" + v + "'"
 
     sql = "update " + table_name + " set " + str(new_values_str) + " "+ w_clause
 

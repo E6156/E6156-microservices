@@ -361,6 +361,55 @@ def user_email(email):
     return full_rsp
 
 
+@application.route("/api/customers/<profile_id>/profile", methods=["GET"])
+@login_required
+def customer_profile(profile_id):
+    global _profile_service
+    global _user_service
+
+    inputs = log_and_extract_input(demo, { "parameters": profile_id })
+    logger.error("/profile: input = " + str(inputs))
+    rsp_data = None
+    rsp_status = None
+    rsp_txt = None
+
+    try:
+        profile_service = _get_profile_service()
+
+        logger.error("/profile: _profile_service = " + str(profile_service))
+
+        if inputs["method"] == "GET":
+            query_params = json.dumps(inputs["query_params"])
+
+            full_rsp = profile_service.get_user_profile(profile_id)
+
+            if full_rsp is not None:
+                rsp_data = full_rsp
+                rsp_status = 200
+                rsp_txt = "OK"
+            else:
+                rsp_data = None
+                rsp_status = 404
+                rsp_txt = "NOT FOUND"
+
+        if rsp_data is not None:
+            full_rsp = Response(json.dumps(rsp_data), status=rsp_status, content_type="application/json")
+        else:
+            full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+    except Exception as e:
+        log_msg = "/profile: Exception = " + str(e)
+        logger.error(log_msg)
+        rsp_status = 500
+        rsp_txt = "INTERNAL SERVER ERROR. Customer profile cannot be processed."
+        full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
+
+    log_response("/profile", rsp_status, rsp_data, rsp_txt)
+
+    return full_rsp
+
+
+
 @application.route("/api/profile", methods=["GET","POST"])
 @login_required
 def user_profile_entry():
