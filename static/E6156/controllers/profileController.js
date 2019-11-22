@@ -7,6 +7,8 @@ CustomerApp.controller("ProfileController", function($scope, $http, $location, $
         waitForStreet: true,
         debug: true,
         target: "US",
+        autocomplete: 5,
+        autoVerify: false,
         placeholder: "Enter address",
         addresses: [{
             freeform: '#newaddress'
