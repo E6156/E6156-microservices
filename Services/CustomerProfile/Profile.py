@@ -76,21 +76,42 @@ class ProfileService(BaseService):
         return ProfileEntriesRDB.update_profile(param_profile=profile_id, update_template=template, data=update_data_dict)
 
     @classmethod
-    def create_profile_entry(cls, param_value, profile_info):
+    def create_profile_entry(cls, param_value, profile_info, address_id):
         for f in ProfileService.required_create_fields:
             v = profile_info.get(f, None)
             if v is None:
                 raise ServiceException(ServiceException.missing_field,
                                        "Missing field = " + f)
 
-            if f == 'email':
-                if v.find('@') == -1:
-                    raise ServiceException(ServiceException.bad_data,
-                           "Email looks invalid: " + v)
+            elif f == 'entry_type':
+                if profile_info.get(f, None) == "Address":
+                    profile_info['entry_value']=address_id
 
         profile_info['user_id'] = param_value
         profile_info['profile_entry_id'] = str(uuid4())
         result = ProfileEntriesRDB.create_profile_entry(profile_info)
+        if result:
+            return result
+        else:
+            return None
+
+    @classmethod
+    def retrieve_address(cls, param_value, profile_info):
+
+        isAddress = False
+        for f in ProfileService.required_create_fields:
+            v = profile_info.get(f, None)
+            if v is None:
+                raise ServiceException(ServiceException.missing_field,
+                                       "Missing field = " + f)
+
+            elif f == 'entry_type':
+                if profile_info.get(f, None) == "Address":
+                    isAddress = True
+            elif f == 'entry_value':
+                if isAddress == True:
+                    result = v
+
         if result:
             return result
         else:

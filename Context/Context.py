@@ -25,10 +25,13 @@ class Context():
         db_connect_info = os.environ['db_connect_info']
         admin_email = os.environ['admin_email']
         db_connect_info = json.loads(db_connect_info)
+        addsvc_location = os.environ['addsvc_url']
 
         ctx = { "db_connect_info": db_connect_info,
                 "JWT_SECRET": "secret",
-                "admin_email": admin_email}
+                "admin_email": admin_email,
+                "addsvc_url" : addsvc_location
+                }
 
         result = Context(ctx)
         return result

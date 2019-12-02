@@ -20,7 +20,7 @@ import Middleware.notification as middleware_notification
 from functools import wraps
 from flask import g, request, redirect, url_for
 import jwt
-
+import requests
 
 # Setup and use the simple, common Python logging framework. Send log messages to the console.
 # The application should get the log level out of the context. We will change later.
@@ -446,7 +446,29 @@ def user_profile_entry():
                 rsp_txt = "Cannot get profile."
 
         if inputs["method"] == "POST":
-            full_rsp = profile_service.create_profile_entry(query_val, inputs["body"])
+
+            add_url = Context.get_default_context().get_context("addsvc_url") + "/addresses"
+
+            logger.error("/profile: context = " + add_url)
+
+            address_id = None
+            address_entry = profile_service.retrieve_address(query_val, inputs["body"])
+
+            if address_entry is not None:
+                r_address = requests.post(add_url, json=address_entry)
+
+                logger.error("/profile: address service response = " + str(r_address.status_code) + " " + str(r_address.json()))
+                if r_address.status_code == 200:
+
+                    address_id = r_address.json()['deliver_point_barcode']
+                    logger.error("/profile: address service response = Getting address id " + address_id)
+                else:
+                    logger.error("/profile: address service response = Invalid address")
+                    address_id = "Invalid"
+                    full_rsp = None
+
+            if address_id is not "Invalid":
+                full_rsp = profile_service.create_profile_entry(query_val, inputs["body"], address_id)
 
             if full_rsp is not None:
                 rsp_data = full_rsp
