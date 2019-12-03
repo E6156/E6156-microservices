@@ -53,7 +53,7 @@ class ProfileService(BaseService):
         return result
 
     @classmethod
-    def update_profile(cls, profile_id, data):
+    def update_profile(cls, profile_id, data, address_id):
         template = {}
         update_data_dict = {}
         update_data = ""
@@ -70,6 +70,9 @@ class ProfileService(BaseService):
                 template['entry_type'] = data.get(f, None)
             if f == 'entry_subtype':
                 template['entry_subtype'] = data.get(f, None)
+
+        if template['entry_type'] == 'Address':
+            update_data_dict['entry_value'] = address_id
 
         template['user_id'] = profile_id
 

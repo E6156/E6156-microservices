@@ -360,7 +360,6 @@ def user_email(email):
 
     return full_rsp
 
-
 @application.route("/api/customers/<profile_id>/profile", methods=["GET"])
 @login_required
 def customer_profile(profile_id):
@@ -408,7 +407,27 @@ def customer_profile(profile_id):
 
     return full_rsp
 
+def check_address(profilesvc, query, payload):
+    add_url = Context.get_default_context().get_context("addsvc_url") + "/addresses"
 
+    logger.error("/address check: context = " + add_url)
+
+    address_id = None
+    address_entry = profilesvc.retrieve_address(query, payload)
+
+    if address_entry is not None:
+        r_address = requests.post(add_url, json=address_entry)
+
+        logger.error("/address check: address service response = " + str(r_address.status_code) + " " + str(r_address.json()))
+        if r_address.status_code == 200:
+
+            address_id = r_address.json()['deliver_point_barcode']
+            logger.error("/address check: address service response = Successfully retrieved valid address id " + address_id)
+        else:
+            logger.error("/address check: address service response = Invalid address")
+            address_id = "Invalid"
+
+    return address_id
 
 @application.route("/api/profile", methods=["GET","POST"])
 @login_required
@@ -447,25 +466,9 @@ def user_profile_entry():
 
         if inputs["method"] == "POST":
 
-            add_url = Context.get_default_context().get_context("addsvc_url") + "/addresses"
+            full_rsp = None
 
-            logger.error("/profile: context = " + add_url)
-
-            address_id = None
-            address_entry = profile_service.retrieve_address(query_val, inputs["body"])
-
-            if address_entry is not None:
-                r_address = requests.post(add_url, json=address_entry)
-
-                logger.error("/profile: address service response = " + str(r_address.status_code) + " " + str(r_address.json()))
-                if r_address.status_code == 200:
-
-                    address_id = r_address.json()['deliver_point_barcode']
-                    logger.error("/profile: address service response = Getting address id " + address_id)
-                else:
-                    logger.error("/profile: address service response = Invalid address")
-                    address_id = "Invalid"
-                    full_rsp = None
+            address_id = check_address(profile_service, query_val, inputs["body"])
 
             if address_id is not "Invalid":
                 full_rsp = profile_service.create_profile_entry(query_val, inputs["body"], address_id)
@@ -531,7 +534,18 @@ def user_profile(profile_id):
 
 
         elif inputs["method"] == "PUT":
-            rsp_id = profile_service.update_profile(profile_id, inputs["body"])
+
+
+            address_id = check_address(profile_service, profile_id, inputs["body"])
+
+            rsp_id = None
+
+            if address_id is not "Invalid":
+                rsp_id = profile_service.update_profile(profile_id, inputs["body"], address_id)
+                #full_rsp = profile_service.create_profile_entry(query_val, inputs["body"], address_id)
+
+
+
             if rsp_id is not None:
                 rsp_status = 200
                 rsp_txt = "id = " + rsp_id + " profile updated."
