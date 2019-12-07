@@ -56,6 +56,7 @@ class UsersService(BaseService):
 
         return user_info
 
+    @classmethod
     def check_hash_password(cls, user_info, user_info_db):
 
         hashed_pwd_check = False
@@ -105,11 +106,7 @@ class UsersService(BaseService):
 
         user_info['id'] = str(uuid4())
         user_info['status'] = 'PENDING'
-        result = UsersRDB.create_user(user_info=user_info)
-        if result:
-            return result
-        else:
-            return None
+        return UsersRDB.create_user(user_info=user_info)
 
     @classmethod
     def delete_user(cls, email, etag):

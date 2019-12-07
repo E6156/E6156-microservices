@@ -208,15 +208,13 @@ def create_update(table_name, new_values, template):
 
     return sql, args
 
-def delete(table_name, template):
+
+def create_delete(table_name, template):
     """
     :param template: A template to form the where clause.
     :return: An update statement template and args.
     """
-    set_terms = []
     args = []
-
-    s_clause = ",".join(set_terms)
     w_clause, w_args = template_to_where_clause(template)
 
     # There are %s in the SET clause and the WHERE clause. We need to form

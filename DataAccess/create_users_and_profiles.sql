@@ -1,3 +1,4 @@
+DROP TABLE if exists `profile_entries`;
 DROP TABLE if exists `users`;
 
 CREATE TABLE `users` (
@@ -9,6 +10,16 @@ CREATE TABLE `users` (
   `status` varchar(255) default NULL,
   `password` varchar(255),
   PRIMARY KEY (`auto_id`)
+) AUTO_INCREMENT=1;
+
+CREATE TABLE `profile_entries` (
+  `entry_id` mediumint(8) unsigned NOT NULL auto_increment,
+  `entry_type` ENUM('Email', 'Address', 'Telephone', 'Other') NOT NULL,
+  `entry_subtype` ENUM('Work', 'Home', 'Mobile', 'Other') NOT NULL,
+  `entry_value` varchar(255) NOT NULL,
+  `profile_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  PRIMARY KEY (`entry_id`)
 ) AUTO_INCREMENT=1;
 
 INSERT INTO `users` (`id`,`last_name`,`first_name`,`email`,`status`,`password`) VALUES ("B5E18BC4-5339-47C5-FBB1-AC9B59251DB7","Nieves","Hall","lectus@aliquetsemut.com","DELETED","VTD22PQV3UT"),("7F64DB59-DA13-4C9C-3B91-9B193DC5251C","Wade","Teegan","metus.vitae@nibhAliquamornare.edu","SUSPENDED","RNS93OJP9KS"),("2B8084A7-090E-6980-66E7-423600559E30","Talley","Branden","ipsum.dolor.sit@enimMauris.co.uk","DELETED","LDE36SPV4UK"),("3C2AEF70-D3FF-57FC-9CB3-491F1DFE2334","Dickson","Barclay","rutrum.non.hendrerit@Donecat.edu","PENDING","YXQ07VUH3CL"),("A4530D4A-3778-35D0-991A-9FAE14C2560D","May","Aubrey","ultrices.Vivamus.rhoncus@maurisblandit.edu","ACTIVE","LEX04QVK1JS"),("DFA678F4-C5B5-5B2A-62DB-7973DDCE4EF5","Curry","Melodie","consectetuer@eu.com","PENDING","WXN46ZTD5TX"),("0048EE3F-F9F9-C7FD-CFC1-615C679F96BE","Sanford","Kirsten","gravida.sagittis.Duis@est.co.uk","SUSPENDED","IEK60FPP0XW"),("E3893503-E672-EED3-1DDF-EA3BAC302C71","Aguirre","Sydney","aptent@Duismienim.com","DELETED","SCP42HLQ7DQ"),("257225C0-36B5-232A-E5FE-2136D86BE852","Sanders","Vance","luctus.lobortis.Class@Namconsequat.co.uk","PENDING","WDY71NOE6HM"),("EA692CA1-0C6B-DFD6-CB94-3DD7CBA8E1E3","Mcguire","Zoe","Quisque@dis.ca","PENDING","SSD08YBT7QL");

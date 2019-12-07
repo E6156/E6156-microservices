@@ -147,12 +147,18 @@ def handle_api_event(method, event):
                 # generate an auth token with role 'admin'
                 auth = apij.encode({"msg": "hello from lambda", "time": time.time()}, key=_secret).decode("utf-8")
                 # send the ETAG first to avoid race condition
-                user_resp = requests.put(full_url, json={"status": "ACTIVE"},
-                                         headers={"ETAG": user_id, "Authorization": "Bearer " + auth})
-                print(user_resp.status_code)
-                if user_resp.status_code == 200:
-                    redirect_url = S3_ENDPOINT + "/verisuccess"
-                    response = respond(None, None, "301", {"Location": redirect_url})
+                # get the etag first
+                user_get_resp = requests.get(full_url, headers={"Authorization": "Bearer " + auth})
+                print('user_get_resp', user_get_resp.status_code)
+                if user_get_resp.status_code == 200:
+                    # send the ETAG first to avoid race condition
+                    user_put_resp = requests.put(full_url, json={"status": "ACTIVE"},
+                                                 headers={"ETAG": user_get_resp.headers['ETAG'],
+                                                          "Authorization": "Bearer " + auth})
+                    print(user_put_resp.status_code)
+                    if user_put_resp.status_code == 200:
+                        redirect_url = S3_ENDPOINT + "/verisuccess"
+                        response = respond(None, None, "301", {"Location": redirect_url})
     return response
 
 
