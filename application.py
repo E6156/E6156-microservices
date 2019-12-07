@@ -355,7 +355,7 @@ def user_email(email):
     return full_rsp
 
 @application.route("/api/profile", methods=["GET", "POST"])
-@login_required
+# @login_required
 def profile():
     global _profile_service
     global _user_service
@@ -411,12 +411,12 @@ def profile():
     return full_rsp
 
 @application.route("/api/customers/<customer_id>/profile", methods=["GET"])
-@login_required
+# @login_required
 def customers_profile(customer_id):
     return redirect(url_for('profile', user_id=customer_id))
 
 @application.route("/api/profile/<customer_id>", methods=["GET", "PUT", "DELETE"])
-@login_required
+# @login_required
 def profile_customer_id(customer_id):
     global _profile_service
     global _user_service
@@ -492,9 +492,8 @@ def registration():
         r_svc = _get_registration_service()
 
         logger.error("/api/registration: _r_svc = " + str(r_svc))
-
-        auth = None
         link = None
+        auth = None
         user_id = None
         if inputs["method"] == "POST":
 

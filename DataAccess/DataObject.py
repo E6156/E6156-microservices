@@ -167,9 +167,7 @@ class UsersRDB(BaseDataObject):
         try:
             sql, args = data_adaptor.create_insert(table_name="users", row=user_info)
             res, data = data_adaptor.run_q(sql, args)
-            if res != 1:
-                result = None
-            else:
+            if res == 1:
                 result = user_info['id']
         except pymysql.err.IntegrityError as ie:
             if ie.args[0] == 1062:
@@ -184,7 +182,7 @@ class UsersRDB(BaseDataObject):
 
     @classmethod
     def update_user(cls, email, data, etag):
-        result = None
+        result = None, None
         conn = None
         cursor = None
         try:
