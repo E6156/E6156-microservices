@@ -2,6 +2,7 @@ import DataAccess.DataAdaptor as data_adaptor
 from abc import ABC, abstractmethod
 import pymysql.err
 import Middleware.security as middleware_security
+from uuid import uuid4
 
 class DataException(Exception):
 
@@ -25,30 +26,7 @@ class BaseDataObject(ABC):
 class ProfileEntriesRDB(BaseDataObject):
 
     @classmethod
-    def get_profile(cls, param_id):
-        # Only get the user not deleted
-        sql = "select * from e6156.profile_entries where profile_entry_id=%s"
-        res, data = data_adaptor.run_q(sql=sql, args=(param_id), fetch=True)
-        if data is not None and len(data) > 0:
-            result =  data[0]
-        else:
-            result = None
-
-        return result
-
-    @classmethod
-    def get_profile_query(cls, param_id):
-        # Only get the user not deleted
-        sql = "select * from e6156.profile_entries where user_id=%s"
-        res, data = data_adaptor.run_q(sql=sql, args=(param_id), fetch=True)
-        if data is not None and len(data) > 0:
-            result =  data
-        else:
-            result = None
-
-        return result
-    @classmethod
-    def get_user_profile(cls, params, fields):
+    def get_profile(cls, params, fields):
 
         sql, args = data_adaptor.create_select(table_name="profile_entries", template=params, fields=fields)
         res, data = data_adaptor.run_q(sql, args)
@@ -61,47 +39,7 @@ class ProfileEntriesRDB(BaseDataObject):
         return result
 
     @classmethod
-    def create_profile_entry(cls, entries):
-
-        result = None
-
-        try:
-            sql, args = data_adaptor.create_insert(table_name="profile_entries", row=entries)
-            res, data = data_adaptor.run_q(sql, args)
-            if res != 1:
-                result = None
-            else:
-                result = entries['user_id']
-        except pymysql.err.IntegrityError as ie:
-            if ie.args[0] == 1062:
-                raise (DataException(DataException.duplicate_key))
-            else:
-                raise DataException()
-        except Exception as e:
-            raise DataException()
-
-        return result
-
-    @classmethod
-    def delete_profile(cls, profile_id):
-        result = None
-
-        sql, args = data_adaptor.create_select(table_name="profile_entries", template={"profile_entry_id": profile_id})
-        _, prev_data = data_adaptor.run_q(sql, args)
-
-        if prev_data is not None and len(prev_data) > 0:
-            sql, args = data_adaptor.delete(table_name="profile_entries", template={"profile_entry_id": profile_id})
-            result, _ = data_adaptor.run_q(sql, args)
-            if result != 1:
-                result = None
-        else:
-            return result
-
-        return "Completed"
-
-
-    @classmethod
-    def update_profile(cls, param_profile, update_template, data):
+    def create_profile(cls, profile_info):
         result = None
         conn = None
         cursor = None
@@ -114,33 +52,27 @@ class ProfileEntriesRDB(BaseDataObject):
             def run_q(sql_, args_):
                 return data_adaptor.run_q(sql_, args_, cur=cursor, conn=conn, commit=False)
 
-            sql, args = data_adaptor.create_select(table_name="profile_entries", template=update_template)
-
-            _, prev_data = run_q(sql, args)
-
-            if prev_data is not None and len(prev_data) > 0:
-
-                sql, args = data_adaptor.create_update(table_name="profile_entries",
-                                                       new_values=data,
-                                                       template=update_template)
-                res, _ = run_q(sql, args)
-                if res != 1:
-                    raise Exception('cannot update data!')
-                else:
-                    # calc new etag based on updated data
-                    new_data = prev_data[0]
-                    for k, v in data.items():
-                        new_data[k] = v
-                    result = new_data['profile_entry_id']
-                # commit the successful transaction
-                conn.commit()
+            # confirm the profile id first
+            sql = "select distinct profile_id from e6156.profile_entries where user_id=%s"
+            res, data = run_q(sql, (profile_info['user_id']))
+            if data is not None and len(data) > 0:
+                profile_info['profile_id'] = data[0]['profile_id']
             else:
-                raise Exception('cannot retrieve data')
+                profile_info['profile_id'] = str(uuid4())
 
+            # post the profile info
+            sql, args = data_adaptor.create_insert(table_name="profile_entries", row=profile_info)
+
+            res, _ = run_q(sql, args)
+            if res != 1:
+                raise Exception('cannot post data!')
+
+            # commit the successful transaction
+            conn.commit()
+            result = profile_info['user_id']
         except Exception as e:
             # rollback if anything bad happens
             conn.rollback()
-            raise e
         finally:
             # closing database connection.
             if cursor:
@@ -148,6 +80,27 @@ class ProfileEntriesRDB(BaseDataObject):
             if conn:
                 conn.close()
             return result
+
+    @classmethod
+    def delete_profile(cls, params):
+        result = None
+        sql, args = data_adaptor.create_delete(table_name="profile_entries",
+                                               template=params)
+        res, _ = data_adaptor.run_q(sql=sql, args=args)
+        if res == 1:
+            result = params['user_id']
+        return result
+
+    @classmethod
+    def update_profile(cls, profile_info, params):
+        result = None
+        sql, args = data_adaptor.create_update(table_name="profile_entries",
+                                               new_values=profile_info,
+                                               template=params)
+        res, _ = data_adaptor.run_q(sql=sql, args=args)
+        if res == 1:
+            result = params['user_id']
+        return result
 
 
 class UsersRDB(BaseDataObject):
@@ -163,7 +116,7 @@ class UsersRDB(BaseDataObject):
         sql = "select * from e6156.users where email=%s and status<>%s"
         res, data = data_adaptor.run_q(sql=sql, args=(email, 'DELETED'), fetch=True)
         if data is not None and len(data) > 0:
-            result =  data[0]
+            result = data[0]
         else:
             result = None
 
@@ -270,7 +223,6 @@ class UsersRDB(BaseDataObject):
         except Exception as e:
             # rollback if anything bad happens
             conn.rollback()
-            raise e
         finally:
             # closing database connection.
             if cursor:

@@ -50,6 +50,11 @@ auth_rules = {
     ("/api/user/<email>", "GET"),
     ("/api/user/<email>", "PUT"),
     ("/api/user/<email>", "DELETE"),
+    ("/api/profile", "GET"),
+    ("/api/profile", "POST"),
+    ("/api/profile/<customer_id>", "GET"),
+    ("/api/profile/<customer_id>", "PUT"),
+    ("/api/profile/<customer_id>", "DELETE"),
 }
 
 

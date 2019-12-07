@@ -25,3 +25,6 @@ CustomerInfo/__pycache__/Users.cpython-37.pyc
 DataAccess/__pycache__/DataObject.cpython-37.pyc
 DataAccess/__pycache__/DataAdaptor.cpython-37.pyc
 DataAccess/__pycache__/__init__.cpython-37.pyc
+
+LambdaFunctions/requests/
+Archive.zip

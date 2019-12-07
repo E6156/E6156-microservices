@@ -4,7 +4,7 @@
 # - Response enables creating well-formed HTTP/REST responses.
 # - requests enables accessing the elements of an incoming HTTP/REST request.
 #
-from flask import Flask, Response, request
+from flask import Flask, Response, redirect, url_for
 from flask_cors import CORS
 
 from datetime import datetime
@@ -20,7 +20,6 @@ import Middleware.notification as middleware_notification
 from functools import wraps
 from flask import g, request, redirect, url_for
 import jwt
-import requests
 
 # Setup and use the simple, common Python logging framework. Send log messages to the console.
 # The application should get the log level out of the context. We will change later.
@@ -139,7 +138,7 @@ def _get_registration_service():
     return _registration_service
 
 def linked_data_assembler(uid):
-    href_string = "/api/profile/" + str(uid)
+    href_string = "/api/customers/" + str(uid) + "/profile"
     profile_link_frame = {
         "rel" : "profile",
         "href" : href_string,
@@ -229,6 +228,7 @@ def demo(parameter):
     return rsp
 
 @application.route("/api/users", methods=["GET"])
+@login_required
 def users():
 
     global _user_service
@@ -301,19 +301,13 @@ def user_email(email):
 
             if rsp is not None:
                 rsp_data = rsp
+                rsp_data["links"] = linked_data_assembler(rsp["id"])
                 rsp_status = 200
                 rsp_txt = "OK"
             else:
                 rsp_data = None
                 rsp_status = 404
                 rsp_txt = "NOT FOUND"
-
-            if "links" not in rsp:
-                rsp["links"] = []
-
-            link_to_profile = linked_data_assembler(rsp["id"])
-
-            rsp["links"].append(link_to_profile)
 
         elif inputs["method"] == "PUT":
             rsp_id, etag = user_service.update_user(email, inputs["body"], inputs["headers"].get("Etag", None))
@@ -360,78 +354,9 @@ def user_email(email):
 
     return full_rsp
 
-@application.route("/api/customers/<profile_id>/profile", methods=["GET"])
+@application.route("/api/profile", methods=["GET", "POST"])
 @login_required
-def customer_profile(profile_id):
-    global _profile_service
-    global _user_service
-
-    inputs = log_and_extract_input(demo, { "parameters": profile_id })
-    logger.error("/profile: input = " + str(inputs))
-    rsp_data = None
-    rsp_status = None
-    rsp_txt = None
-
-    try:
-        profile_service = _get_profile_service()
-
-        logger.error("/profile: _profile_service = " + str(profile_service))
-
-        if inputs["method"] == "GET":
-            query_params = json.dumps(inputs["query_params"])
-
-            full_rsp = profile_service.get_user_profile(profile_id)
-
-            if full_rsp is not None:
-                rsp_data = full_rsp
-                rsp_status = 200
-                rsp_txt = "OK"
-            else:
-                rsp_data = None
-                rsp_status = 404
-                rsp_txt = "NOT FOUND"
-
-        if rsp_data is not None:
-            full_rsp = Response(json.dumps(rsp_data), status=rsp_status, content_type="application/json")
-        else:
-            full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
-
-    except Exception as e:
-        log_msg = "/profile: Exception = " + str(e)
-        logger.error(log_msg)
-        rsp_status = 500
-        rsp_txt = "INTERNAL SERVER ERROR. Customer profile cannot be processed."
-        full_rsp = Response(rsp_txt, status=rsp_status, content_type="text/plain")
-
-    log_response("/profile", rsp_status, rsp_data, rsp_txt)
-
-    return full_rsp
-
-def check_address(profilesvc, query, payload):
-    add_url = Context.get_default_context().get_context("addsvc_url") + "/addresses"
-
-    logger.error("/address check: context = " + add_url)
-
-    address_id = None
-    address_entry = profilesvc.retrieve_address(query, payload)
-
-    if address_entry is not None:
-        r_address = requests.post(add_url, json=address_entry)
-
-        logger.error("/address check: address service response = " + str(r_address.status_code) + " " + str(r_address.json()))
-        if r_address.status_code == 200:
-
-            address_id = r_address.json()['deliver_point_barcode']
-            logger.error("/address check: address service response = Successfully retrieved valid address id " + address_id)
-        else:
-            logger.error("/address check: address service response = Invalid address")
-            address_id = "Invalid"
-
-    return address_id
-
-@application.route("/api/profile", methods=["GET","POST"])
-@login_required
-def user_profile_entry():
+def profile():
     global _profile_service
     global _user_service
 
@@ -445,15 +370,9 @@ def user_profile_entry():
         profile_service = _get_profile_service()
 
         logger.error("/profile: _profile_service = " + str(profile_service))
-        query_params = inputs["query_params"]
-        logger.error("/profile: query = " + str(query_params))
-        #logger.error("/profile: query = " + str(json.dumps(inputs["body"])))
-        for (key, val) in query_params.items():
-            query_key = key
-            query_val = val
 
         if inputs["method"] == "GET":
-            full_rsp = profile_service.get_user_profile(query_val)
+            full_rsp = profile_service.get_profile(inputs["query_params"])
 
             if full_rsp is not None:
                 rsp_data = full_rsp
@@ -464,25 +383,15 @@ def user_profile_entry():
                 rsp_status = 404
                 rsp_txt = "Cannot get profile."
 
-        if inputs["method"] == "POST":
-
-            full_rsp = None
-
-            address_id = check_address(profile_service, query_val, inputs["body"])
-
-            if address_id is not "Invalid":
-                full_rsp = profile_service.create_profile_entry(query_val, inputs["body"], address_id)
+        elif inputs["method"] == "POST":
+            full_rsp = profile_service.create_profile(inputs["body"])
 
             if full_rsp is not None:
-                rsp_data = full_rsp
                 rsp_status = 201
-                rsp_txt = "Profile" + rsp_data + " created."
-                link = rsp_data[0]
-                auth = rsp_data[1]
-                user_id = rsp_data[2]
+                rsp_txt = "Profile " + full_rsp + " created."
             else:
                 rsp_data = None
-                rsp_status = 404
+                rsp_status = 400
                 rsp_txt = "Cannot create profile."
 
         if rsp_data is not None:
@@ -501,13 +410,18 @@ def user_profile_entry():
 
     return full_rsp
 
-@application.route("/api/profile/<profile_id>", methods=["GET", "PUT", "DELETE"])
+@application.route("/api/customers/<customer_id>/profile", methods=["GET"])
 @login_required
-def user_profile(profile_id):
+def customers_profile(customer_id):
+    return redirect(url_for('profile', user_id=customer_id))
+
+@application.route("/api/profile/<customer_id>", methods=["GET", "PUT", "DELETE"])
+@login_required
+def profile_customer_id(customer_id):
     global _profile_service
     global _user_service
 
-    inputs = log_and_extract_input(demo, { "parameters": profile_id })
+    inputs = log_and_extract_input(demo, { "parameters": customer_id })
     logger.error("/profile: input = " + str(inputs))
     rsp_data = None
     rsp_status = None
@@ -519,49 +433,33 @@ def user_profile(profile_id):
         logger.error("/profile: _profile_service = " + str(profile_service))
 
         if inputs["method"] == "GET":
-            query_params = json.dumps(inputs["query_params"])
-
-            full_rsp = profile_service.get_profile(profile_id)
+            full_rsp = profile_service.get_profile_by_user_id(customer_id)
 
             if full_rsp is not None:
                 rsp_data = full_rsp
                 rsp_status = 200
                 rsp_txt = "OK"
             else:
-                rsp_data = None
                 rsp_status = 404
                 rsp_txt = "NOT FOUND"
 
-
         elif inputs["method"] == "PUT":
-
-
-            address_id = check_address(profile_service, profile_id, inputs["body"])
-
-            rsp_id = None
-
-            if address_id is not "Invalid":
-                rsp_id = profile_service.update_profile(profile_id, inputs["body"], address_id)
-                #full_rsp = profile_service.create_profile_entry(query_val, inputs["body"], address_id)
-
-
+            rsp_id = profile_service.update_profile(customer_id, inputs["body"], inputs["query_params"])
 
             if rsp_id is not None:
                 rsp_status = 200
                 rsp_txt = "id = " + rsp_id + " profile updated."
             else:
-                rsp_data = None
                 rsp_status = 404
                 rsp_txt = "can not update"
 
         elif request.method == 'DELETE':
-            rsp_id = profile_service.delete_profile(profile_id)
+            rsp_id = profile_service.delete_profile(customer_id, inputs["query_params"])
+
             if rsp_id is not None:
                 rsp_status = 200
                 rsp_txt = "id = " + rsp_id + " user deleted."
-                rsp_data = rsp_id
             else:
-                rsp_data = None
                 rsp_status = 404
                 rsp_txt = "NOT FOUND"
 
@@ -693,10 +591,6 @@ def login():
     log_response("/api/login", rsp_status, rsp_data, rsp_txt)
 
     return full_rsp
-
-@application.route("/api/logout", methods=["DELETE"])
-def logout():
-    pass
 
 logger.debug("__name__ = " + str(__name__))
 # run the app.
